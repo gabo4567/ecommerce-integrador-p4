@@ -119,13 +119,16 @@ Para que el equipo trabaje de manera coordinada y segura:
 - Antes de empezar a trabajar cada día:
 ```bash
 git pull origin main
-Al finalizar tu tarea diaria:
 ```
-bash
-Copiar código
+
+Al finalizar tu tarea diaria:
+
+```bash
 git add .
 git commit -m "Mensaje claro: ej. Added login endpoint"
 git push origin main
+```
+
 Coordinar diariamente qué carpeta o microservicio tocará cada integrante para evitar conflictos.
 
 Cada integrante puede agregar README específicos en subcarpetas (backend-python/README.md, backend-node/README.md) si lo considera útil.
@@ -139,7 +142,6 @@ Integrante 3 – Base de datos (PostgreSQL y MongoDB)
 
 Integrante 4 – Microservicio IA con FastAPI y comunicación en tiempo real
 
-⚠️ Estos roles son sugeridos; pueden ajustarse según habilidades y disponibilidad de cada integrante.
 
 📝 Notas Finales
 Este proyecto está diseñado para un mes de desarrollo colaborativo, priorizando un sistema funcional y modular sobre implementar todas las funciones avanzadas.
@@ -147,6 +149,7 @@ Este proyecto está diseñado para un mes de desarrollo colaborativo, priorizand
 Se busca cumplir los requerimientos mínimos de ambos profesores, con una arquitectura clara y documentación profesional.
 
 Los íconos y la organización ayudan a que el repositorio sea visual y fácil de entender para cualquier nuevo integrante o evaluador.
+
 
 🔗 Enlaces Útiles
 GitHub del proyecto
