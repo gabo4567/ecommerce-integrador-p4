@@ -89,19 +89,16 @@ ecommerce-integrador-p4/
 ## 🚀 Cómo Ejecutar el Proyecto
 
 1. **Clonar el repositorio**
-```bash
+
 git clone https://github.com/TuUsuario/ecommerce-integrador-p4.git
 cd ecommerce-integrador-p4
 Crear archivo de variables de entorno
 
-bash
-Copiar código
 cp .env.example .env
 # Editar .env con tus credenciales y configuraciones
 Levantar todos los servicios con Docker
 
-bash
-Copiar código
+
 docker-compose up --build
 Acceder a los backends
 
@@ -123,7 +120,7 @@ Para que el equipo trabaje de manera coordinada y segura:
 ```bash
 git pull origin main
 Al finalizar tu tarea diaria:
-
+```
 bash
 Copiar código
 git add .
