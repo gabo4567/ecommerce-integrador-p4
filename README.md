@@ -34,6 +34,8 @@ El objetivo es contar con un sistema **funcional, modular y escalable**, cumplie
 - CI/CD (GitHub Actions) 🔧
 - Variables de entorno para credenciales y configuraciones 🔐
 
+---
+
 ## 📂 Estructura del Proyecto
 
 ecommerce-integrador-p4/
@@ -83,7 +85,6 @@ ecommerce-integrador-p4/
 └── ci-cd/ ⚙️
 └── deploy.yml
 
-
 ---
 
 ## 🚀 Cómo Ejecutar el Proyecto
@@ -106,11 +107,15 @@ Backend Python / Django: http://localhost:8000/
 
 Backend Node / Express: http://localhost:3000/
 
-Pruebas y documentación
+---
+
+## Pruebas y documentación
 
 Swagger estará disponible en los endpoints de cada API
 
 Probar CRUD, autenticación y comunicación en tiempo real
+
+---
 
 ## 👥 Colaboración y Buenas Prácticas
 
@@ -133,6 +138,8 @@ Coordinar diariamente qué carpeta o microservicio tocará cada integrante para 
 
 Cada integrante puede agregar README específicos en subcarpetas (backend-python/README.md, backend-node/README.md) si lo considera útil.
 
+---
+
 ## 👥 Equipo y Roles Sugeridos
 
 👨‍💻 Juan Gabriel Pared – Coordinador y backend Python / Django
@@ -143,6 +150,7 @@ Cada integrante puede agregar README específicos en subcarpetas (backend-python
 
 👨‍💻 Juan Francisco Bartlett – Microservicio IA con FastAPI y comunicación en tiempo real
 
+---
 
 ## 📝 Notas Finales
 Este proyecto está diseñado para un mes de desarrollo colaborativo, priorizando un sistema funcional y modular sobre implementar todas las funciones avanzadas.
@@ -151,12 +159,17 @@ Se busca cumplir los requerimientos mínimos de ambos profesores, con una arquit
 
 Los íconos y la organización ayudan a que el repositorio sea visual y fácil de entender para cualquier nuevo integrante o evaluador.
 
+---
+
 ## 📄 Licencia
 
 Este proyecto es para **fines educativos** y **no tiene licencia comercial**.
 
+---
 
-🔗 Enlaces Útiles
+## 🔗 Enlaces Útiles
 GitHub del proyecto
 
 Documentación Swagger disponible en cada backend cuando se levanten los servicios.
+
+---
