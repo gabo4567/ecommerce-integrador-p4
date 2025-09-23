@@ -1,52 +1,49 @@
-# E-commerce Integrador P4
+# 🛒 E-commerce Integrador P4
 
-## Descripción del Proyecto
-Este proyecto es un **sistema de e-commerce simplificado** desarrollado como Trabajo Práctico Integrador de la materia Programación IV.  
-Incluye funcionalidades de gestión de usuarios, productos, pedidos y recomendaciones de contenido mediante un microservicio de IA.  
-El proyecto combina **backend en Python/Django**, **backend en NodeJS/Express**, bases de datos **PostgreSQL y MongoDB**, y comunicación en tiempo real con **Firebase y Socket.IO**.
+## 📖 Descripción del Proyecto
+Este proyecto es un **sistema de e-commerce simplificado**, desarrollado como Trabajo Práctico Integrador de la materia **Programación IV**.  
+Combina gestión de usuarios, productos, pedidos y recomendaciones de contenido mediante un **microservicio de IA**.
 
-El objetivo es tener un sistema funcional y modular que cumpla con los requerimientos de ambos profesores, permitiendo:  
+El objetivo es contar con un sistema **funcional, modular y escalable**, cumpliendo con los requisitos de ambos profesores:
+
 - Gestión completa de usuarios, productos y pedidos  
 - Autenticación JWT con roles y permisos  
 - Comunicación en tiempo real para notificaciones  
-- Microservicio de IA para generar recomendaciones o clasificaciones  
-- Contenerización y despliegue en la nube mediante Docker  
+- Microservicio de IA para recomendaciones o clasificaciones  
+- Contenerización y despliegue en la nube mediante Docker
 
 ---
 
-## Tecnologías Utilizadas
+## 🛠️ Tecnologías Utilizadas
 
 **Backend Python / Django**
-- Python 3.x
-- Django
-- Django REST Framework (DRF)
+- Python 3.x 🐍
+- Django / Django REST Framework (DRF)
 - FastAPI (microservicio IA)
-- PostgreSQL
+- PostgreSQL 🐘
 
 **Backend Node / Express**
-- Node.js
+- Node.js ⚡
 - Express.js
-- MongoDB Atlas
+- MongoDB Atlas 🍃
 - Socket.IO
-- Firebase Realtime Database
+- Firebase Realtime Database 🔔
 
 **DevOps / Despliegue**
-- Docker / Docker Compose
-- CI/CD (GitHub Actions o similar)
-- Variables de entorno para credenciales y configuraciones
+- Docker / Docker Compose 🐳
+- CI/CD (GitHub Actions) 🔧
+- Variables de entorno para credenciales y configuraciones 🔐
 
----
-
-## Estructura del Proyecto
+## 📂 Estructura del Proyecto
 
 ecommerce-integrador-p4/
 │── README.md
 │── .gitignore
 │── docker-compose.yml
 │── .env.example
-│── docs/
+│── docs/ 📝
 │
-├── backend-python/
+├── backend-python/ 🐍
 │ ├── manage.py
 │ ├── requirements.txt
 │ ├── Dockerfile
@@ -56,12 +53,12 @@ ecommerce-integrador-p4/
 │ ├── users/
 │ ├── products/
 │ ├── orders/
-│ └── fastapi-ia/
+│ └── fastapi-ia/ ⚡
 │ ├── app.py
 │ ├── requirements.txt
 │ └── Dockerfile
 │
-├── backend-node/
+├── backend-node/ ⚡
 │ ├── package.json
 │ ├── Dockerfile
 │ ├── src/
@@ -77,21 +74,19 @@ ecommerce-integrador-p4/
 │ └── sockets/
 │ └── index.js
 │
-├── database/
+├── database/ 🗄️
 │ ├── postgres/
 │ │ └── init.sql
 │ └── mongo/
 │ └── init.js
 │
-└── ci-cd/
+└── ci-cd/ ⚙️
 └── deploy.yml
 
-yaml
-Copiar código
 
 ---
 
-## Cómo Ejecutar el Proyecto
+## 🚀 Cómo Ejecutar el Proyecto
 
 1. **Clonar el repositorio**
 ```bash
@@ -116,32 +111,47 @@ Backend Node / Express: http://localhost:3000/
 
 Pruebas y documentación
 
-Swagger estará disponible en los endpoints de cada API.
+Swagger estará disponible en los endpoints de cada API
 
-Realizar pruebas de CRUD, autenticación y comunicación en tiempo real.
+Probar CRUD, autenticación y comunicación en tiempo real
 
-Colaboración y Buenas Prácticas
-Antes de trabajar cada día: git pull origin main
+## 👥 Colaboración y Buenas Prácticas
 
-Al terminar tu tarea:
+Para que el equipo trabaje de manera coordinada y segura:
+
+- Antes de empezar a trabajar cada día:
+```bash
+git pull origin main
+Al finalizar tu tarea diaria:
 
 bash
 Copiar código
 git add .
 git commit -m "Mensaje claro: ej. Added login endpoint"
 git push origin main
-Mantener coordinación diaria para no pisarse cambios.
+Coordinar diariamente qué carpeta o microservicio tocará cada integrante para evitar conflictos.
 
-Cada integrante puede crear README específicos en subcarpetas si lo considera necesario (ej. backend-python/README.md).
+Cada integrante puede agregar README específicos en subcarpetas (backend-python/README.md, backend-node/README.md) si lo considera útil.
 
-Autor y Equipo
-Juan Gabriel Pared (Coordinador)
+🧑‍💻 Equipo y Roles Sugeridos
+Juan Gabriel Pared – Coordinador y backend Python / Django
 
-Integrante 2
+Integrante 2 – Backend Node / Express y sockets
 
-Integrante 3
+Integrante 3 – Base de datos (PostgreSQL y MongoDB)
 
-Integrante 4
+Integrante 4 – Microservicio IA con FastAPI y comunicación en tiempo real
 
-Notas
-Este proyecto está diseñado para un mes de desarrollo colaborativo con un enfoque funcional, modular y escalable, cumpliendo los requisitos mínimos de ambos profesores para entrega y presentación.
+⚠️ Estos roles son sugeridos; pueden ajustarse según habilidades y disponibilidad de cada integrante.
+
+📝 Notas Finales
+Este proyecto está diseñado para un mes de desarrollo colaborativo, priorizando un sistema funcional y modular sobre implementar todas las funciones avanzadas.
+
+Se busca cumplir los requerimientos mínimos de ambos profesores, con una arquitectura clara y documentación profesional.
+
+Los íconos y la organización ayudan a que el repositorio sea visual y fácil de entender para cualquier nuevo integrante o evaluador.
+
+🔗 Enlaces Útiles
+GitHub del proyecto
+
+Documentación Swagger disponible en cada backend cuando se levanten los servicios.
