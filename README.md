@@ -133,7 +133,8 @@ Coordinar diariamente qué carpeta o microservicio tocará cada integrante para 
 
 Cada integrante puede agregar README específicos en subcarpetas (backend-python/README.md, backend-node/README.md) si lo considera útil.
 
-🧑‍💻 Equipo y Roles Sugeridos
+## 🧑‍💻 Equipo y Roles Sugeridos
+
 Juan Gabriel Pared – Coordinador y backend Python / Django
 
 Integrante 2 – Backend Node / Express y sockets
@@ -143,7 +144,7 @@ Integrante 3 – Base de datos (PostgreSQL y MongoDB)
 Integrante 4 – Microservicio IA con FastAPI y comunicación en tiempo real
 
 
-📝 Notas Finales
+## 📝 Notas Finales
 Este proyecto está diseñado para un mes de desarrollo colaborativo, priorizando un sistema funcional y modular sobre implementar todas las funciones avanzadas.
 
 Se busca cumplir los requerimientos mínimos de ambos profesores, con una arquitectura clara y documentación profesional.
