@@ -117,13 +117,13 @@ Probar CRUD, autenticación y comunicación en tiempo real
 Para que el equipo trabaje de manera coordinada y segura:
 
 - Antes de empezar a trabajar cada día:
-```bash
+```
 git pull origin main
 ```
 
 Al finalizar tu tarea diaria:
 
-```bash
+```
 git add .
 git commit -m "Mensaje claro: ej. Added login endpoint"
 git push origin main
