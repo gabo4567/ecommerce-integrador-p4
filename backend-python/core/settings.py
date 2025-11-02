@@ -125,3 +125,20 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 # CONFIG ADICIONAL
 # ------------------------------------------------------------
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
+from datetime import timedelta
+
+# ------------------------------------------------------------
+# JWT CONFIGURATION
+# ------------------------------------------------------------
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(hours=1),    # Access token dura 1 hora
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),    # Refresh token dura 7 días
+    'ROTATE_REFRESH_TOKENS': True,                  # opcional, seguridad extra
+}
+
+# Ajustar REST_FRAMEWORK si no tiene JWT incluido
+REST_FRAMEWORK['DEFAULT_AUTHENTICATION_CLASSES'] = (
+    'rest_framework_simplejwt.authentication.JWTAuthentication',
+)
