@@ -13,6 +13,9 @@ urlpatterns = [
     # ✅ Incluí las rutas de la app "products"
     path('api/', include('products.urls')),
 
+    # ✅ Rutas de la app "users" (cambio y reset de contraseña)
+    path('api/users/', include('users.urls')),
+
     # JWT
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
