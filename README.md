@@ -1,5 +1,18 @@
 # 🛒 E-commerce Integrador P4
 
+## Backend Python — Base de datos (Postgres)
+- Fuente de verdad: las migraciones de Django definen el esquema. Prioriza `python manage.py migrate` sobre SQL crudo.
+- Configuración rápida:
+  - Variables en `backend-python` `.env`: `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `DB_HOST`, `DB_PORT`.
+  - Crea usuario/BD con `database/postgres/init.sql` (plantilla comentada). Ajusta nombres/clave.
+  - Instala dependencias y aplica migraciones: `cd backend-python && pip install -r requirements.txt && python manage.py migrate`.
+- SQL crudos (opcional, para auditoría o aprovisionamiento manual):
+  - `database/postgres/sql/products_0003.sql`
+  - `database/postgres/sql/orders_0004.sql`
+  - `database/postgres/sql/system_0001.sql`
+  - Orden sugerido: primero `products_0003.sql`, luego `orders_0004.sql`, y `system_0001.sql`. Ejecuta dentro de una transacción y respeta las FK.
+- Nota práctica: si ya aplicaste migraciones, no ejecutes los SQL crudos. Úsalos sólo si tu entorno requiere provisionar el esquema sin Django.
+
 ## 📖 Descripción del Proyecto
 Este proyecto es un **sistema de e-commerce simplificado**, desarrollado como Trabajo Práctico Integrador de la materia **Programación IV**.  
 Combina gestión de usuarios, productos, pedidos y recomendaciones de contenido mediante un **microservicio de IA**.
