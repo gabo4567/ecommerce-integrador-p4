@@ -8,14 +8,14 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Conectar a MongoDB
-mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log('✅ Connected to MongoDB Atlas'))
-  .catch(err => console.error('❌ Error connecting to MongoDB:', err));
+if (process.env.MONGO_URI) {
+  mongoose.connect(process.env.MONGO_URI)
+    .then(() => console.log('✅ Connected to MongoDB Atlas'))
+    .catch(err => console.error('❌ Error connecting to MongoDB:', err));
+}
 
-// Importar rutas
-const reviewsRoutes = require('./src/routes/reviews');
-const commentsRoutes = require('./src/routes/comments');
+const reviewsRoutes = require('./routes/reviews');
+const commentsRoutes = require('./routes/comments');
 
 app.use('/api/reviews', reviewsRoutes);
 app.use('/api/comments', commentsRoutes);
