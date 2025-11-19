@@ -17,6 +17,9 @@ urlpatterns = [
     # ✅ Rutas de la app "orders"
     path('api/', include('orders.urls')),
 
+    # ✅ Rutas de la app "system"
+    path('api/', include('system.urls')),
+
     # ✅ Rutas de la app "users" (cambio y reset de contraseña)
     path('api/users/', include('users.urls')),
 

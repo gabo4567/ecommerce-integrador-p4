@@ -43,8 +43,8 @@ class SupportTicket(models.Model):
     product = models.ForeignKey('products.Product', on_delete=models.SET_NULL, null=True, blank=True)
     subject = models.CharField(max_length=200)
     message = models.TextField()
-    status = models.CharField(max_length=50, default='open')  # open, pending, solved, closed
-    priority = models.CharField(max_length=20, default='normal')  # low, normal, high
+    status = models.CharField(max_length=50, default='open')
+    priority = models.CharField(max_length=20, default='normal')
     created_at = models.DateTimeField(auto_now_add=True)
     closed_at = models.DateTimeField(null=True, blank=True)
 
@@ -56,3 +56,15 @@ class SupportTicket(models.Model):
 
     def __str__(self):
         return f"Ticket {self.id} ({self.status}) by {self.user_id}"
+
+class TicketMessage(models.Model):
+    ticket = models.ForeignKey(SupportTicket, on_delete=models.CASCADE, related_name='messages')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    message = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        indexes = [models.Index(fields=['ticket'])]
+
+    def __str__(self):
+        return f"Msg {self.id} ticket {self.ticket_id}"
