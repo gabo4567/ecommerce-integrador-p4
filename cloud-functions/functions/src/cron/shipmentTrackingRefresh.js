@@ -15,7 +15,7 @@ export const shipmentTrackingRefresh = onSchedule("every 60 minutes", async () =
     if (s?.status) body.status = s.status
     try {
       await axios.patch(`${baseUrl}shipments/${s.id}/`, body, { headers })
-    } catch {}
+    } catch (e) { void e }
   }
 })
 

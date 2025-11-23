@@ -24,6 +24,10 @@ module.exports = {
     "arrow-parens": "off",
     "one-var": "off",
     "eol-last": "off",
+    "camelcase": "off",
+    "indent": "off",
+    "comma-dangle": "off",
+    "semi": "off",
   },
   overrides: [
     {
@@ -32,6 +36,12 @@ module.exports = {
         mocha: true,
       },
       rules: {},
+    },
+    {
+      files: ["src/**/*.js"],
+      parserOptions: {
+        sourceType: "module",
+      },
     },
   ],
   globals: {},
