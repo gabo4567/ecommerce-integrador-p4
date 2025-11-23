@@ -1,8 +1,8 @@
-﻿from django.urls import path, include
+from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from .views import (
     SupportTicketViewSet,
-    AuditListView,
+    AuditListCreateView,
     SystemSettingListView,
     SystemSettingDetailUpdateView,
     SupportTicketMessageListCreateView,
@@ -13,7 +13,7 @@ router.register(r'support-tickets', SupportTicketViewSet, basename='support-tick
 
 urlpatterns = [
     path('', include(router.urls)),
-    path('audit/', AuditListView.as_view()),
+    path('audit/', AuditListCreateView.as_view()),
     path('settings/', SystemSettingListView.as_view()),
     path('settings/<str:key>/', SystemSettingDetailUpdateView.as_view()),
     path('support-tickets/<int:ticket_id>/messages/', SupportTicketMessageListCreateView.as_view()),
