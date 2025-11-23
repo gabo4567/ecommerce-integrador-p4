@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 from dotenv import load_dotenv
+from datetime import timedelta
 
 # ------------------------------------------------------------
 # BASE CONFIG
@@ -17,6 +18,9 @@ ALLOWED_HOSTS = ['*']  # para desarrollo
 # APPS
 # ------------------------------------------------------------
 INSTALLED_APPS = [
+    # Tema visual (debe ir antes del admin)
+    'jazzmin',
+
     # Django apps por defecto
     'django.contrib.admin',
     'django.contrib.auth',
@@ -57,7 +61,6 @@ CORS_ALLOW_ALL_ORIGINS = True  # sólo para desarrollo
 # URLS / WSGI
 # ------------------------------------------------------------
 ROOT_URLCONF = 'core.urls'
-
 WSGI_APPLICATION = 'core.wsgi.application'
 
 
@@ -121,13 +124,12 @@ AUTH_USER_MODEL = 'users.User'
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
+
 # ------------------------------------------------------------
 # CONFIG ADICIONAL
 # ------------------------------------------------------------
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-
-from datetime import timedelta
 
 # ------------------------------------------------------------
 # JWT CONFIGURATION
@@ -143,6 +145,7 @@ REST_FRAMEWORK['DEFAULT_AUTHENTICATION_CLASSES'] = (
     'rest_framework_simplejwt.authentication.JWTAuthentication',
 )
 
+
 # ------------------------------------------------------------
 # EMAIL (configurable por entorno, por defecto consola)
 # ------------------------------------------------------------
@@ -155,8 +158,61 @@ EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', '0') == '1'
 EMAIL_USE_SSL = os.getenv('EMAIL_USE_SSL', '0') == '1'
 DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'no-reply@example.com')
 
+
 # ------------------------------------------------------------
 # Branding del sitio (para emails y enlaces)
 # ------------------------------------------------------------
 SITE_NAME = os.getenv('SITE_NAME', 'Feraytek')
 SITE_URL = os.getenv('SITE_URL', 'http://localhost:8000')
+
+
+# ------------------------------------------------------------
+# JAZZMIN CONFIG (tema visual del admin)
+# ------------------------------------------------------------
+JAZZMIN_SETTINGS = {
+    "site_title": "Feraytek Admin",
+    "site_header": "Panel de Administración Feraytek",
+    "welcome_sign": "Bienvenido al panel de administración de Feraytek",
+    "copyright": "© 2025 Feraytek",
+    "search_model": ["users.User", "products.Product", "orders.Order"],
+    "show_ui_builder": True,
+    "theme": "lux",
+}
+
+# ------------------------------------------------------------
+# JAZZMIN CONFIG
+# ------------------------------------------------------------
+JAZZMIN_SETTINGS = {
+    "site_title": "E-commerce Admin",
+    "site_header": "E-commerce",
+    "site_brand": "E-commerce",
+    "welcome_sign": "Bienvenido al panel de administración de E-commerce",
+    "copyright": "© 2025 E-commerce",
+    
+    # Colores principales
+    "theme": "darkly",  # opciones: cosmo, flatly, darkly, cyborg, etc.
+    "custom_css": None,
+    "custom_js": None,
+
+    # Íconos personalizados
+    "icons": {
+        "auth.User": "fas fa-user",
+        "auth.Group": "fas fa-users",
+        "products.Product": "fas fa-box",
+        "orders.Order": "fas fa-shopping-cart",
+    },
+
+    # Layout y estilo
+    "show_ui_builder": False,
+    "related_modal_active": True,
+}
+
+JAZZMIN_UI_TWEAKS = {
+    "theme": "darkly",  # tema oscuro elegante
+    "dark_mode_theme": "darkly",
+    "navbar": "navbar-dark bg-dark",
+    "footer_fixed": True,
+    "sidebar_fixed": True,
+    "sidebar": "sidebar-dark-primary",
+    "actions_sticky_top": True,
+}
