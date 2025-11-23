@@ -24,6 +24,9 @@ module.exports = {
     "arrow-parens": "off",
     "one-var": "off",
     "eol-last": "off",
+    "camelcase": "off",
+    "indent": "off",
+    "comma-dangle": "off",
   },
   overrides: [
     {
