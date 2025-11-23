@@ -1,4 +1,4 @@
-﻿from rest_framework import viewsets, permissions, generics, status
+from rest_framework import viewsets, permissions, generics, status
 from rest_framework.response import Response
 from rest_framework.exceptions import PermissionDenied
 from django.utils import timezone
@@ -50,10 +50,13 @@ class SupportTicketViewSet(viewsets.ModelViewSet):
             Audit.objects.create(user=request.user, action='support_ticket_closed', details=f"Ticket {ticket.id} cerrado por cliente")
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-class AuditListView(generics.ListAPIView):
+class AuditListCreateView(generics.ListCreateAPIView):
     queryset = Audit.objects.all().order_by('-created_at')
     serializer_class = AuditSerializer
     permission_classes = [permissions.IsAdminUser]
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
 
 class SystemSettingListView(generics.ListAPIView):
     queryset = SystemSetting.objects.all()
