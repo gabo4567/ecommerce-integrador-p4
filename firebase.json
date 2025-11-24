@@ -1,0 +1,15 @@
+{
+  "functions": {
+    "source": "cloud-functions/functions"
+  },
+  "emulators": {
+    "functions": {
+      "host": "localhost",
+      "port": 5001
+    },
+    "storage": {
+      "host": "localhost",
+      "port": 9199
+    }
+  }
+}

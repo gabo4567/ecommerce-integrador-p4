@@ -1,10 +1,11 @@
 import axios from "axios"
 import { onRequest } from "firebase-functions/v2/https"
+import { defineSecret } from "firebase-functions/params"
 
 const baseUrl = process.env.BACKEND_BASE_URL || ""
-const token = process.env.SERVICE_ACCESS_TOKEN || ""
+const SERVICE_ACCESS_TOKEN = defineSecret("SERVICE_ACCESS_TOKEN")
 
-export const webhookShipmentStatus = onRequest(async (req, res) => {
+export const webhookShipmentStatus = onRequest({ secrets: [SERVICE_ACCESS_TOKEN] }, async (req, res) => {
   try {
     if (req.method !== "POST") {
       res.status(405).send({ error: "method_not_allowed" })
@@ -15,7 +16,7 @@ export const webhookShipmentStatus = onRequest(async (req, res) => {
       res.status(400).send({ error: "invalid_body" })
       return
     }
-    const headers = { Authorization: `Bearer ${token}` }
+    const headers = { Authorization: `Bearer ${SERVICE_ACCESS_TOKEN.value()}` }
     const patchResp = await axios.patch(`${baseUrl}shipments/${id}/`, { status, tracking_number }, { headers })
     let historyResp = null
     if (order && old_status && new_status) {
