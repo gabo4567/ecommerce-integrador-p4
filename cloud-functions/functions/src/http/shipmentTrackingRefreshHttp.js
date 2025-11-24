@@ -1,17 +1,16 @@
 import axios from "axios"
 import { onRequest } from "firebase-functions/v2/https"
-import { defineSecret } from "firebase-functions/params"
 
 const baseUrl = process.env.BACKEND_BASE_URL || ""
-const SERVICE_ACCESS_TOKEN = defineSecret("SERVICE_ACCESS_TOKEN")
+const token = process.env.SERVICE_ACCESS_TOKEN || ""
 
-export const shipmentTrackingRefreshHttp = onRequest({ secrets: [SERVICE_ACCESS_TOKEN] }, async (req, res) => {
+export const shipmentTrackingRefreshHttp = onRequest(async (req, res) => {
   try {
     if (req.method !== "POST") {
       res.status(405).send({ error: "method_not_allowed" })
       return
     }
-    const headers = { Authorization: `Bearer ${SERVICE_ACCESS_TOKEN.value()}` }
+    const headers = { Authorization: `Bearer ${token}` }
     const listResp = await axios.get(`${baseUrl}shipments/`, { headers })
     const shipments = Array.isArray(listResp.data) ? listResp.data : listResp.data?.results || []
     const results = []

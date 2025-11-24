@@ -16,6 +16,7 @@
   - `setx BACKEND_BASE_URL "http://localhost:8000/api/"`
   - `setx SERVICE_ACCESS_TOKEN "<tu_token>"`
 - Reinicia la terminal para que apliquen.
+- Nota: No se usan Secrets ni despliegue de Functions; este proyecto está preparado para plan Spark usando emuladores y variables locales.
 
 ## Funciones
 - `webhookShipmentStatus` (HTTP)
@@ -34,8 +35,8 @@
     - Si se envía historia, `POST /api/order-status-history/` con `{ order, old_status, new_status, reason }`
   - Respuesta: `{ shipment, history|null }`
 
-- `shipmentTrackingRefresh` (cron)
-  - Programación: `every 60 minutes`
+- `shipmentTrackingRefreshHttp` (HTTP)
+  - Método: `POST`
   - Comportamiento:
     - `GET /api/shipments/`
     - Itera envíos y hace `PATCH /api/shipments/{id}/` con `tracking_number` y `status` existentes (idempotente)
@@ -53,7 +54,8 @@
 
 ## Emuladores
 - `firebase emulators:start --only functions,storage`
-- Invoca la función HTTP con `curl` y verifica que el backend responda correctamente.
+- Invoca las funciones HTTP con `curl` y verifica que el backend responda correctamente.
+- Despliegue a Firebase Cloud Functions requiere plan Blaze; se trabaja en local con emuladores.
 
 ## Buenas prácticas
 - Validar método y body.
