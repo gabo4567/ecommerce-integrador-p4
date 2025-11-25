@@ -1,0 +1,104 @@
+import React, { useEffect, useState } from "react";
+import Layout from "../components/Layout";
+import { api } from "../api/client";
+import { useAuthStore } from "../store/auth";
+
+const Support: React.FC = () => {
+  const [tickets, setTickets] = useState<any[]>([]);
+  const [subject, setSubject] = useState("");
+  const [message, setMessage] = useState("");
+  const [activeTicket, setActiveTicket] = useState<any | null>(null);
+  const [messages, setMessages] = useState<any[]>([]);
+  const [reply, setReply] = useState("");
+  const access = useAuthStore((s) => s.accessToken);
+
+  useEffect(() => {
+    const run = async () => {
+      if (!access) return;
+      try {
+        const t = await api.get<any[]>("support-tickets/");
+        setTickets(t);
+      } catch {}
+    };
+    run();
+  }, [access]);
+
+  const createTicket = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!subject || !message) return;
+    try {
+      const t = await api.post<any>("support-tickets/", { subject, message });
+      setTickets([t, ...tickets]);
+      setSubject("");
+      setMessage("");
+    } catch {}
+  };
+
+  const loadMessages = async (ticket: any) => {
+    setActiveTicket(ticket);
+    try {
+      const ms = await api.get<any[]>(`support-tickets/${ticket.id}/messages/`);
+      setMessages(ms);
+    } catch {}
+  };
+
+  const sendReply = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!activeTicket) return;
+    try {
+      const m = await api.post<any>(`support-tickets/${activeTicket.id}/messages/`, { message: reply });
+      setMessages([...messages, m]);
+      setReply("");
+    } catch {}
+  };
+
+  return (
+    <Layout>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-1">
+          <form onSubmit={createTicket} className="bg-white rounded-lg p-6 shadow space-y-3">
+            <h2 className="text-xl font-semibold">Nuevo ticket</h2>
+            <input value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="Asunto" className="w-full px-3 py-2 border border-gray-300 rounded" />
+            <textarea value={message} onChange={(e) => setMessage(e.target.value)} placeholder="Mensaje" className="w-full px-3 py-2 border border-gray-300 rounded" rows={4} />
+            <button className="w-full bg-blue-600 text-white py-2 rounded">Enviar</button>
+          </form>
+          <div className="mt-6 bg-white rounded-lg p-6 shadow">
+            <h2 className="text-xl font-semibold mb-4">Mis tickets</h2>
+            <ul className="space-y-2">
+              {tickets.map((t) => (
+                <li key={t.id} className="border border-gray-200 rounded p-3 cursor-pointer" onClick={() => loadMessages(t)}>
+                  <div className="font-medium">{t.subject}</div>
+                  <div className="text-sm text-gray-600">{t.status}</div>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+        <div className="lg:col-span-2">
+          {activeTicket ? (
+            <div className="bg-white rounded-lg p-6 shadow">
+              <h2 className="text-xl font-semibold mb-4">Ticket #{activeTicket.id}</h2>
+              <div className="space-y-3 mb-6">
+                {messages.map((m) => (
+                  <div key={m.id} className="border border-gray-200 rounded p-3">
+                    <div className="text-sm text-gray-600">{new Date(m.created_at).toLocaleString()}</div>
+                    <div>{m.message}</div>
+                  </div>
+                ))}
+              </div>
+              <form onSubmit={sendReply} className="flex gap-2">
+                <input value={reply} onChange={(e) => setReply(e.target.value)} className="flex-1 px-3 py-2 border border-gray-300 rounded" placeholder="Escribe un mensaje" />
+                <button className="bg-blue-600 text-white px-4 py-2 rounded">Enviar</button>
+              </form>
+            </div>
+          ) : (
+            <div className="text-gray-600">Selecciona un ticket para ver mensajes</div>
+          )}
+        </div>
+      </div>
+    </Layout>
+  );
+};
+
+export default Support;
+

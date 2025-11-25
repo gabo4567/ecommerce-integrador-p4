@@ -10,6 +10,7 @@ from .serializers import (
     PasswordResetConfirmSerializer,
 )
 from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework.permissions import IsAuthenticated
 
 class UserRegisterView(generics.CreateAPIView):
     serializer_class = UserSerializer
@@ -17,6 +18,14 @@ class UserRegisterView(generics.CreateAPIView):
 
 class MyTokenObtainPairView(TokenObtainPairView):
     serializer_class = MyTokenObtainPairSerializer
+
+
+class MeView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        serializer = UserSerializer(request.user)
+        return Response(serializer.data)
 
 
 class ChangePasswordView(APIView):
