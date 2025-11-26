@@ -20,7 +20,7 @@ class Migration(migrations.Migration):
                 ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL)),
             ],
             options={
-                'indexes': [models.Index(fields=['ticket'])],
+                'indexes': [models.Index(fields=['ticket'], name='system_ticket_id_idx')],
             },
         ),
     ]

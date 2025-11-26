@@ -4,12 +4,17 @@ from rest_framework import routers
 from products.views import ProductViewSet
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from users.views import UserRegisterView
+from .views import index, demo
 
 router = routers.DefaultRouter()
 router.register(r'products', ProductViewSet, basename='product')
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+
+    # Home
+    path('', index),
+    path('demo/', demo),
 
     # ✅ Incluí las rutas de la app "products"
     path('api/', include('products.urls')),

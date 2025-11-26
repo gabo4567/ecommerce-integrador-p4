@@ -99,6 +99,11 @@ class PaymentViewSet(viewsets.ModelViewSet):
             raise PermissionDenied("No puedes registrar pago de otro usuario.")
         serializer.save()
 
+    def perform_update(self, serializer):
+        if not self.request.user.is_staff:
+            raise PermissionDenied("Solo staff puede actualizar pagos.")
+        serializer.save()
+
 class ShipmentViewSet(viewsets.ModelViewSet):
     queryset = Shipment.objects.all()
     serializer_class = ShipmentSerializer
@@ -112,6 +117,11 @@ class ShipmentViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         if not self.request.user.is_staff:
             raise PermissionDenied("Solo staff puede crear envíos.")
+        serializer.save()
+
+    def perform_update(self, serializer):
+        if not self.request.user.is_staff:
+            raise PermissionDenied("Solo staff puede actualizar envíos.")
         serializer.save()
 
 class DiscountViewSet(viewsets.ModelViewSet):

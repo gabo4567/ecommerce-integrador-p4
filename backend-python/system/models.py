@@ -64,7 +64,7 @@ class TicketMessage(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        indexes = [models.Index(fields=['ticket'])]
+        indexes = [models.Index(fields=['ticket'], name='system_ticket_id_idx')]
 
     def __str__(self):
         return f"Msg {self.id} ticket {self.ticket_id}"
