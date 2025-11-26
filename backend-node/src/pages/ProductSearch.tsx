@@ -1,4 +1,6 @@
 import React, { useEffect, useState } from 'react';
+import { useLocation } from "react-router-dom";
+import { Link } from "react-router-dom";
 import Layout from '../components/Layout';
 import { Star, ShoppingCart, Heart, Filter, ChevronDown } from 'lucide-react';
 import { api } from "../api/client";
@@ -7,17 +9,38 @@ import { useNavigate } from "react-router-dom";
 import { useCartStore } from "../store/cart";
 
 const ProductSearch: React.FC = () => {
-  const [sortBy, setSortBy] = useState('relevance');
-  const [priceRange, setPriceRange] = useState([0, 2000]);
-  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
-  const [showFilters, setShowFilters] = useState(false);
+      const location = useLocation();
+    const [sortBy, setSortBy] = useState('relevance');
+    const [priceRange, setPriceRange] = useState([0, 2000]);
+    const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+    const [showFilters, setShowFilters] = useState(false);
 
-  const [products, setProducts] = useState<any[]>([]);
-  const [categories, setCategories] = useState<string[]>([]);
-  const brands = ['Apple', 'Samsung', 'Sony', 'Nintendo', 'Microsoft', 'Google'];
-  const access = useAuthStore((s) => s.accessToken);
-  const navigate = useNavigate();
-  const refreshCart = useCartStore((s) => s.refreshCount);
+    const [products, setProducts] = useState<any[]>([]);
+    const [categories, setCategories] = useState<string[]>([]);
+    const brands = ['Apple', 'Samsung', 'Sony', 'Nintendo', 'Microsoft', 'Google'];
+    const access = useAuthStore((s) => s.accessToken);
+    const navigate = useNavigate();
+    const refreshCart = useCartStore((s) => s.refreshCount);
+
+    // ...existing useState declarations...
+    // Filtrar productos por categoría seleccionada
+    let filteredProducts = selectedCategories.length === 0
+      ? products
+      : products.filter((p: any) =>
+          selectedCategories.includes(
+            p.category?.name || p.category
+          )
+        );
+
+    // Ordenar productos según sortBy
+    if (sortBy === "price-low") {
+      filteredProducts = filteredProducts.slice().sort((a, b) => Number(a.price) - Number(b.price));
+    } else if (sortBy === "price-high") {
+      filteredProducts = filteredProducts.slice().sort((a, b) => Number(b.price) - Number(a.price));
+    } else if (sortBy === "newest") {
+      filteredProducts = filteredProducts.slice().sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    }
+  // ...existing code...
   useEffect(() => {
     const run = async () => {
       try {
@@ -29,6 +52,15 @@ const ProductSearch: React.FC = () => {
     };
     run();
   }, []);
+
+  // Aplica el filtro de categoría solo cuando los productos estén cargados y la URL cambie
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const categoria = params.get("categoria");
+    if (categoria && products.length > 0) {
+      setSelectedCategories([categoria]);
+    }
+  }, [location.search, products]);
 
   const addToCart = async (p: any) => {
     if (!access) { navigate('/login'); return; }
@@ -162,35 +194,31 @@ const ProductSearch: React.FC = () => {
         {/* Products Grid */}
         <div className="flex-1">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {products.map((product) => (
-              <div key={product.id} className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow">
+            {filteredProducts.map((product) => (
+              <Link to={`/producto/${product.id}`} key={product.id} className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow">
                 <div className="relative">
                   <img
-                  src={(product.images && product.images[0]?.url) || "https://via.placeholder.com/400"}
-                  alt={product.name}
-                  className="w-full h-48 object-cover rounded-t-lg"
-                />
-                <button className="absolute top-2 right-2 p-2 bg-white rounded-full shadow-md hover:bg-gray-50">
-                  <Heart className="h-5 w-5 text-gray-400 hover:text-red-500" />
-                </button>
+                    src={(product.images && product.images[0]?.url) || "https://via.placeholder.com/400"}
+                    alt={product.name}
+                    className="w-full h-48 object-contain rounded-t-lg bg-white"
+                  />
+                  <button className="absolute top-2 right-2 p-2 bg-white rounded-full shadow-md hover:bg-gray-50" onClick={e => { e.preventDefault(); e.stopPropagation(); addToCart(product); }}>
+                    <Heart className="h-5 w-5 text-gray-400 hover:text-red-500" />
+                  </button>
                   {false && (
                     <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center rounded-t-lg">
                       <span className="text-white font-semibold">Agotado</span>
                     </div>
                   )}
-                  
                 </div>
-                
                 <div className="p-4">
                   <div className="flex justify-between items-start mb-2">
                     <p className="text-sm text-gray-500">{product.category?.name || ""}</p>
                     <p className="text-sm font-medium text-gray-600"></p>
                   </div>
-                  
                   <h3 className="font-semibold text-gray-800 mb-2 line-clamp-2">
                     {product.name}
                   </h3>
-                  
                   <div className="flex items-center mb-3">
                     <div className="flex items-center">
                       {[...Array(5)].map((_, i) => (
@@ -202,7 +230,6 @@ const ProductSearch: React.FC = () => {
                     </div>
                     <span className="text-sm text-gray-500 ml-1">(0)</span>
                   </div>
-                  
                   <div className="flex items-center justify-between">
                     <div>
                       <span className="text-lg font-bold text-gray-900">
@@ -213,14 +240,14 @@ const ProductSearch: React.FC = () => {
                       </span>
                     </div>
                     <button
-                      onClick={() => addToCart(product)}
+                      onClick={e => { e.preventDefault(); e.stopPropagation(); addToCart(product); }}
                       className={`p-2 rounded-lg transition-colors bg-blue-600 text-white hover:bg-blue-700`}
                     >
                       <ShoppingCart className="h-5 w-5" />
                     </button>
                   </div>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
 
