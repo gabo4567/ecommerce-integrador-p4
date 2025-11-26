@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Home from "@/pages/Home";
+import CategoryList from "@/pages/CategoryList";
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
 import ProductSearch from "@/pages/ProductSearch";
@@ -36,6 +37,7 @@ export default function App() {
         <Route path="/ajustes" element={<SystemSettings />} />
         <Route path="/admin/auditoria" element={<AdminAudit />} />
         <Route path="/pedido/:id" element={<OrderDetails />} />
+        <Route path="/categorias" element={<CategoryList />} />
       </Routes>
     </Router>
   );

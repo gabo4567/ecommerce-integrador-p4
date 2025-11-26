@@ -19,7 +19,11 @@ const Home: React.FC = () => {
         const prods = await api.get<any[]>("products/");
         const cats = await api.get<any[]>("categories/");
         setProducts(prods.slice(0, 4));
-        setCategories(cats.map((c: any) => ({ name: c.name, icon: "📦", count: 0 })));
+        setCategories(cats.map((c: any) => ({
+          name: c.name,
+          image_url: c.image_url,
+          count: prods.filter((p: any) => p.category === c.id || p.category?.id === c.id).length
+        })));
       } catch {}
     };
     run();
@@ -49,12 +53,12 @@ const Home: React.FC = () => {
             Descubre los mejores productos con los mejores precios
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <button className="bg-white text-blue-600 px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors">
+            <Link to="/productos" className="bg-white text-blue-600 px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors flex items-center justify-center">
               Ver Ofertas
-            </button>
-            <button className="border-2 border-white text-white px-8 py-3 rounded-lg font-semibold hover:bg-white hover:text-blue-600 transition-colors">
+            </Link>
+            <Link to="/categorias" className="border-2 border-white text-white px-8 py-3 rounded-lg font-semibold hover:bg-white hover:text-blue-600 transition-colors flex items-center justify-center">
               Explorar Categorías
-            </button>
+            </Link>
           </div>
         </div>
       </section>
@@ -65,13 +69,23 @@ const Home: React.FC = () => {
           Categorías Populares
         </h2>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-          {categories.map((category, index) => (
-            <div key={index} className="bg-white rounded-lg p-6 text-center hover:shadow-lg transition-shadow cursor-pointer">
-              <div className="text-4xl mb-2">{category.icon}</div>
-              <h3 className="font-semibold text-gray-800 mb-1">{category.name}</h3>
-              <p className="text-sm text-gray-500">{category.count} productos</p>
-            </div>
-          ))}
+            {categories.map((category, index) => (
+              <Link
+                to={`/productos?categoria=${encodeURIComponent(category.name)}`}
+                key={index}
+                className="bg-white rounded-lg p-6 text-center hover:shadow-lg transition-shadow cursor-pointer block"
+              >
+                <div className="mb-2 flex justify-center">
+                  <img
+                    src={category.image_url || "https://via.placeholder.com/100"}
+                    alt={category.name}
+                    className="w-16 h-16 object-contain rounded-full border"
+                  />
+                </div>
+                <h3 className="font-semibold text-gray-800 mb-1">{category.name}</h3>
+                <p className="text-sm text-gray-500">{category.count} productos</p>
+              </Link>
+            ))}
         </div>
       </section>
 
@@ -81,9 +95,9 @@ const Home: React.FC = () => {
           <h2 className="text-3xl font-bold text-gray-800">
             Productos Destacados
           </h2>
-          <button className="text-blue-600 hover:text-blue-800 font-medium">
+          <Link to="/productos" className="text-blue-600 hover:text-blue-800 font-medium">
             Ver todos →
-          </button>
+          </Link>
         </div>
         
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -93,7 +107,7 @@ const Home: React.FC = () => {
                 <img
                   src={(product.images && product.images[0]?.url) || "https://via.placeholder.com/400"}
                   alt={product.name}
-                  className="w-full h-48 object-cover rounded-t-lg"
+                  className="w-full h-48 object-contain rounded-t-lg"
                 />
                 <button className="absolute top-2 right-2 p-2 bg-white rounded-full shadow-md hover:bg-gray-50">
                   <Heart className="h-5 w-5 text-gray-400 hover:text-red-500" />

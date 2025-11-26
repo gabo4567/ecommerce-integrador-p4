@@ -6,6 +6,10 @@ import { api } from "../api/client";
 import { useAuthStore } from "../store/auth";
 
 const UserProfile: React.FC = () => {
+    // Estados para paginado y orden
+    const [ordersPage, setOrdersPage] = useState(1);
+    const [ordersPerPage] = useState(5);
+    const [ordersOrder, setOrdersOrder] = useState<'asc' | 'desc'>('desc');
   const [activeTab, setActiveTab] = useState('profile');
   const [isEditing, setIsEditing] = useState(false);
   const [userData, setUserData] = useState({
@@ -277,46 +281,78 @@ const UserProfile: React.FC = () => {
             {activeTab === 'orders' && (
               <div>
                 <h2 className="text-xl font-semibold text-gray-800 mb-6">Mis Pedidos</h2>
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <label className="mr-2 text-sm text-gray-700">Ordenar:</label>
+                    <select
+                      value={ordersOrder}
+                      onChange={e => setOrdersOrder(e.target.value as 'asc' | 'desc')}
+                      className="border border-gray-300 rounded px-2 py-1 text-sm"
+                    >
+                      <option value="desc">Más nuevo primero</option>
+                      <option value="asc">Más antiguo primero</option>
+                    </select>
+                  </div>
+                  <div>
+                    <button
+                      className="px-3 py-1 border rounded mr-2"
+                      disabled={ordersPage === 1}
+                      onClick={() => setOrdersPage(p => Math.max(1, p - 1))}
+                    >Anterior</button>
+                    <span className="text-sm">Página {ordersPage}</span>
+                    <button
+                      className="px-3 py-1 border rounded ml-2"
+                      disabled={ordersPage * ordersPerPage >= orders.length}
+                      onClick={() => setOrdersPage(p => p + 1)}
+                    >Siguiente</button>
+                  </div>
+                </div>
                 <div className="space-y-4">
-                  {orders.map((order) => (
-                    <div key={order.id} className="border border-gray-200 rounded-lg p-6">
-                      <div className="flex items-center justify-between mb-4">
-                        <div>
-                          <h3 className="font-semibold text-gray-800">Pedido #{order.id}</h3>
-                          <p className="text-sm text-gray-600">
-                            <Calendar className="inline h-4 w-4 mr-1" />
-                            {new Date(order.created_at).toLocaleDateString()}
-                          </p>
+                  {orders
+                    .slice()
+                    .sort((a, b) => ordersOrder === 'asc'
+                      ? new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+                      : new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+                    )
+                    .slice((ordersPage - 1) * ordersPerPage, ordersPage * ordersPerPage)
+                    .map((order) => (
+                      <div key={order.id} className="border border-gray-200 rounded-lg p-6">
+                        <div className="flex items-center justify-between mb-4">
+                          <div>
+                            <h3 className="font-semibold text-gray-800">Pedido #{order.id}</h3>
+                            <p className="text-sm text-gray-600">
+                              <Calendar className="inline h-4 w-4 mr-1" />
+                              {new Date(order.created_at).toLocaleDateString()}
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(order.status)}`}>
+                              {order.status}
+                            </span>
+                            {orderStatusHelp(order.status) && (
+                              <div className="text-xs text-gray-500">{orderStatusHelp(order.status)}</div>
+                            )}
+                            <p className="text-lg font-semibold text-gray-800 mt-1">
+                              ${Number(order.total).toFixed(2)}
+                            </p>
+                          </div>
                         </div>
-                        <div className="text-right">
-                          <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(order.status)}`}>
-                            {order.status}
-                          </span>
-                          {orderStatusHelp(order.status) && (
-                            <div className="text-xs text-gray-500">{orderStatusHelp(order.status)}</div>
-                          )}
-                          <p className="text-lg font-semibold text-gray-800 mt-1">
-                            ${Number(order.total).toFixed(2)}
-                          </p>
+                        <div className="flex items-center justify-between">
+                            <div className="text-sm text-gray-600">
+                              <Package className="inline h-4 w-4 mr-1" />
+                              {(order.items?.length ?? 0)} artículos
+                            </div>
+                            <div className="flex space-x-2">
+                            <Link to={`/pedido/${order.id}`} className="text-blue-600 hover:text-blue-800 text-sm font-medium">
+                              Ver Detalles
+                            </Link>
+                            <button className="text-blue-600 hover:text-blue-800 text-sm font-medium">
+                              Estado: {order.status}
+                            </button>
+                            </div>
                         </div>
                       </div>
-                      
-                      <div className="flex items-center justify-between">
-                          <div className="text-sm text-gray-600">
-                            <Package className="inline h-4 w-4 mr-1" />
-                            {(order.items?.length ?? 0)} artículos
-                          </div>
-                          <div className="flex space-x-2">
-                          <Link to={`/pedido/${order.id}`} className="text-blue-600 hover:text-blue-800 text-sm font-medium">
-                            Ver Detalles
-                          </Link>
-                          <button className="text-blue-600 hover:text-blue-800 text-sm font-medium">
-                            Estado: {order.status}
-                          </button>
-                          </div>
-                      </div>
-                    </div>
-                  ))}
+                    ))}
                 </div>
               </div>
             )}
