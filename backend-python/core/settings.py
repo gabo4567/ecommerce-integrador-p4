@@ -77,7 +77,7 @@ DATABASES = {
         'USER': os.getenv('DB_USER'),
         'PASSWORD': os.getenv('DB_PASSWORD'),
         'HOST': os.getenv('DB_HOST', 'localhost'),
-        'PORT': os.getenv('DB_PORT', '5432'),
+        'PORT': os.getenv('DB_PORT', '5433'),
     }
 }
 
@@ -167,20 +167,6 @@ DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'no-reply@example.com')
 # ------------------------------------------------------------
 SITE_NAME = os.getenv('SITE_NAME', 'Feraytek')
 SITE_URL = os.getenv('SITE_URL', 'http://localhost:8000')
-
-
-# ------------------------------------------------------------
-# JAZZMIN CONFIG (tema visual del admin)
-# ------------------------------------------------------------
-JAZZMIN_SETTINGS = {
-    "site_title": "Feraytek Admin",
-    "site_header": "Panel de Administración Feraytek",
-    "welcome_sign": "Bienvenido al panel de administración de Feraytek",
-    "copyright": "© 2025 Feraytek",
-    "search_model": ["users.User", "products.Product", "orders.Order"],
-    "show_ui_builder": True,
-    "theme": "lux",
-}
 
 # ------------------------------------------------------------
 # JAZZMIN CONFIG
