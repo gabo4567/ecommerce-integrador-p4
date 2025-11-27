@@ -1,27 +1,48 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { ShoppingCart, User, Search } from 'lucide-react';
 import { useAuthStore } from "../store/auth";
 import { api } from "../api/client";
 import { useCartStore } from "../store/cart";
+import ConfirmDialog from '@/components/ConfirmDialog';
 
 const Header: React.FC = () => {
   const access = useAuthStore((s) => s.accessToken);
   const username = useAuthStore((s) => s.username);
+  const role = useAuthStore((s) => s.role);
   const logout = useAuthStore((s) => s.logout);
   const navigate = useNavigate();
   const location = useLocation();
   const cartCount = useCartStore((s) => s.count);
   const refreshCart = useCartStore((s) => s.refreshCount);
 
-  const handleLogout = () => {
+  const [confirmLogout, setConfirmLogout] = useState(false);
+  const handleLogoutConfirm = () => {
     logout();
+    setConfirmLogout(false);
     navigate("/");
   };
 
   useEffect(() => {
-    refreshCart();
+    if (access) { refreshCart(); }
+    else { useCartStore.setState({ count: 0 }); }
   }, [access, location.pathname]);
+
+  useEffect(() => {
+    const hydrateRole = async () => {
+      if (access && !role) {
+        try {
+          const me = await api.get<any>("users/me/");
+          const r = me?.role ?? null;
+          if (typeof window !== "undefined") {
+            if (r) localStorage.setItem("role", r); else localStorage.removeItem("role");
+          }
+          useAuthStore.setState({ role: r });
+        } catch {}
+      }
+    };
+    hydrateRole();
+  }, [access, role]);
 
   return (
     <header className="bg-white shadow-md sticky top-0 z-50">
@@ -62,9 +83,9 @@ const Header: React.FC = () => {
                 <>
                   <Link to="/perfil" className="text-gray-700 hover:text-blue-600 flex items-center space-x-2">
                     <User className="h-6 w-6" />
-                    <span className="hidden sm:inline">{username}</span>
+                    <span className="hidden sm:inline">{useAuthStore.getState().role === 'admin' ? 'Administrador' : (username ?? '')}</span>
                   </Link>
-                  <button onClick={handleLogout} className="text-gray-700 hover:text-blue-600 font-medium">
+                  <button onClick={() => setConfirmLogout(true)} className="text-gray-700 hover:text-blue-600 font-medium">
                     Cerrar sesión
                   </button>
                 </>
@@ -90,6 +111,15 @@ const Header: React.FC = () => {
           </nav>
         </div>
       </div>
+      <ConfirmDialog
+        open={confirmLogout}
+        title="¿Cerrar sesión?"
+        message="Estás a punto de cerrar sesión. ¿Deseas continuar?"
+        confirmText="Sí, cerrar"
+        cancelText="Cancelar"
+        onConfirm={handleLogoutConfirm}
+        onClose={() => setConfirmLogout(false)}
+      />
     </header>
   );
 };

@@ -4,6 +4,7 @@ type AuthState = {
   accessToken: string | null;
   refreshToken: string | null;
   username: string | null;
+  role: string | null;
   setTokens: (access: string, refresh: string | null) => void;
   login: (username: string, password: string) => Promise<boolean>;
   logout: () => void;
@@ -12,11 +13,13 @@ type AuthState = {
 const initialAccess = typeof window !== "undefined" ? localStorage.getItem("accessToken") : null;
 const initialRefresh = typeof window !== "undefined" ? localStorage.getItem("refreshToken") : null;
 const initialUsername = typeof window !== "undefined" ? localStorage.getItem("username") : null;
+const initialRole = typeof window !== "undefined" ? localStorage.getItem("role") : null;
 
 export const useAuthStore = create<AuthState>((set) => ({
   accessToken: initialAccess,
   refreshToken: initialRefresh,
   username: initialUsername,
+  role: initialRole,
   setTokens: (access, refresh) => {
     if (typeof window !== "undefined") {
       localStorage.setItem("accessToken", access ?? "");
@@ -24,21 +27,34 @@ export const useAuthStore = create<AuthState>((set) => ({
     }
     set({ accessToken: access, refreshToken: refresh ?? null });
   },
-  login: async (username, password) => {
+  login: async (identifier, password) => {
     try {
-      const res = await fetch("http://localhost:8000/api/token/", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password }),
-      });
+      const base = (import.meta as any).env?.VITE_API_BASE_URL ?? "http://localhost:8000/api/";
+      const isEmail = typeof identifier === "string" && identifier.includes("@");
+      const url = new URL(isEmail ? "token/by-email/" : "token/", base).toString();
+      const body = isEmail ? { email: identifier, password } : { username: identifier, password };
+      const res = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
       if (!res.ok) return false;
       const data = await res.json();
+      const username = data?.username ?? (isEmail ? identifier : identifier);
       if (typeof window !== "undefined") {
         localStorage.setItem("accessToken", data.access);
         localStorage.setItem("refreshToken", data.refresh);
         localStorage.setItem("username", username);
       }
       set({ accessToken: data.access, refreshToken: data.refresh, username });
+      // fetch role
+      try {
+        const meRes = await fetch(new URL("users/me/", base).toString(), { headers: { "Authorization": `Bearer ${data.access}` } });
+        if (meRes.ok) {
+          const me = await meRes.json();
+          const role = me?.role ?? null;
+          if (typeof window !== "undefined") {
+            if (role) localStorage.setItem("role", role); else localStorage.removeItem("role");
+          }
+          set({ role });
+        }
+      } catch {}
       return true;
     } catch {
       return false;
@@ -49,7 +65,8 @@ export const useAuthStore = create<AuthState>((set) => ({
       localStorage.removeItem("accessToken");
       localStorage.removeItem("refreshToken");
       localStorage.removeItem("username");
+      localStorage.removeItem("role");
     }
-    set({ accessToken: null, refreshToken: null, username: null });
+    set({ accessToken: null, refreshToken: null, username: null, role: null });
   },
 }));

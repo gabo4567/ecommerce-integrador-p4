@@ -19,10 +19,18 @@ from .emails import (
 User = get_user_model()
 
 class UserSerializer(serializers.ModelSerializer):
+    role = serializers.SerializerMethodField()
     class Meta:
         model = User
+<<<<<<< Updated upstream
         fields = ['id', 'username', 'email', 'password']
+=======
+        fields = ['id', 'username', 'email', 'password', 'first_name', 'last_name', 'role']
+>>>>>>> Stashed changes
         extra_kwargs = {'password': {'write_only': True}}
+
+    def get_role(self, obj):
+        return 'admin' if getattr(obj, 'is_staff', False) or getattr(obj, 'is_superuser', False) else 'user'
 
     def create(self, validated_data):
         user = User.objects.create_user(**validated_data)
@@ -37,6 +45,20 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
         token['role'] = getattr(user, 'role', 'customer')
         token['is_staff'] = user.is_staff
         return token
+
+
+class EmailTokenObtainPairSerializer(TokenObtainPairSerializer):
+    email = serializers.EmailField(required=False)
+
+    def validate(self, attrs):
+        email = attrs.get('email')
+        if email and not attrs.get('username'):
+            try:
+                user = User.objects.get(email__iexact=email)
+                attrs['username'] = user.username
+            except User.DoesNotExist:
+                pass
+        return super().validate(attrs)
 
 
 class ChangePasswordSerializer(serializers.Serializer):

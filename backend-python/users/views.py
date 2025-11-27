@@ -11,6 +11,7 @@ from .serializers import (
     AdminUserSerializer,
 )
 from rest_framework_simplejwt.views import TokenObtainPairView
+<<<<<<< Updated upstream
 from django.contrib.auth import get_user_model
 
 User = get_user_model()
@@ -19,6 +20,11 @@ class UsersAdminViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = AdminUserSerializer
     permission_classes = [permissions.IsAdminUser]
+=======
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework.permissions import IsAuthenticated, AllowAny
+from .serializers import EmailTokenObtainPairSerializer
+>>>>>>> Stashed changes
 
 class UserRegisterView(generics.CreateAPIView):
     serializer_class = UserSerializer
@@ -57,3 +63,27 @@ class PasswordResetConfirmView(APIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response({'detail': 'Contraseña restablecida correctamente'}, status=status.HTTP_200_OK)
+class EmailTokenObtainPairView(TokenObtainPairView):
+    serializer_class = EmailTokenObtainPairSerializer
+
+class EmailLoginView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        email = request.data.get("email")
+        password = request.data.get("password")
+        if not email or not password:
+            return Response({"detail": "missing_email_or_password"}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            user = UserSerializer.Meta.model.objects.get(email__iexact=email)
+        except UserSerializer.Meta.model.DoesNotExist:
+            return Response({"detail": "invalid_credentials"}, status=status.HTTP_400_BAD_REQUEST)
+        if not user.is_active or not user.check_password(password):
+            return Response({"detail": "invalid_credentials"}, status=status.HTTP_400_BAD_REQUEST)
+        refresh = RefreshToken.for_user(user)
+        return Response({
+            "access": str(refresh.access_token),
+            "refresh": str(refresh),
+            "username": user.username,
+            "email": user.email,
+        }, status=status.HTTP_200_OK)

@@ -15,6 +15,7 @@ class Product(models.Model):
     price = models.DecimalField(max_digits=12, decimal_places=2)
     stock = models.IntegerField(default=0)
     category = models.ForeignKey(Category, on_delete=models.PROTECT, related_name='products')
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='created_products')
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

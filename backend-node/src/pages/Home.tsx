@@ -19,9 +19,10 @@ const Home: React.FC = () => {
         const prods = await api.get<any[]>("products/");
         const cats = await api.get<any[]>("categories/");
         setProducts(prods.slice(0, 4));
+        const validUrl = (u: any) => typeof u === 'string' && /^https?:\/\//.test(u);
         setCategories(cats.map((c: any) => ({
           name: c.name,
-          image_url: c.image_url,
+          image_url: validUrl(c.image_url) ? c.image_url : null,
           count: prods.filter((p: any) => p.category === c.id || p.category?.id === c.id).length
         })));
       } catch {}
@@ -77,7 +78,7 @@ const Home: React.FC = () => {
               >
                 <div className="mb-2 flex justify-center">
                   <img
-                    src={category.image_url || "https://via.placeholder.com/100"}
+                    src={category.image_url ?? "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100'><rect width='100%' height='100%' fill='%23f3f4f6'/><circle cx='50' cy='50' r='30' fill='%23e5e7eb'/></svg>"}
                     alt={category.name}
                     className="w-16 h-16 object-contain rounded-full border"
                   />
@@ -105,7 +106,7 @@ const Home: React.FC = () => {
             <Link to={`/producto/${product.id}`} key={product.id} className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow">
               <div className="relative">
                 <img
-                  src={(product.images && product.images[0]?.url) || "https://via.placeholder.com/400"}
+                  src={(product.images && product.images[0]?.url) || "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='400' height='300'><rect width='100%' height='100%' fill='%23f3f4f6'/><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' fill='%239ca3af' font-size='20'>Sin imagen</text></svg>"}
                   alt={product.name}
                   className="w-full h-48 object-contain rounded-t-lg"
                 />

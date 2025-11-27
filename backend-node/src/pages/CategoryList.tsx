@@ -25,7 +25,7 @@ const CategoryList: React.FC = () => {
             <div key={cat.id} className="bg-white rounded-lg shadow-md p-6 text-center hover:shadow-lg transition-shadow">
               <div className="flex justify-center mb-4">
                 <img
-                  src={cat.image_url || "https://via.placeholder.com/100"}
+                  src={(typeof cat.image_url === 'string' && /^https?:\/\//.test(cat.image_url)) ? cat.image_url : "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100'><rect width='100%' height='100%' fill='%23f3f4f6'/><circle cx='50' cy='50' r='30' fill='%23e5e7eb'/></svg>"}
                   alt={cat.name}
                   className="w-20 h-20 object-contain rounded-full border"
                 />

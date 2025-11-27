@@ -41,20 +41,21 @@ const Login: React.FC = () => {
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                Correo Electrónico
+              <label htmlFor="identifier" className="block text-sm font-medium text-gray-700 mb-2">
+                Correo o usuario
               </label>
               <div className="relative">
-                <Mail className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+                <User className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
                 <input
-                  type="email"
-                  id="email"
+                  type="text"
+                  id="identifier"
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="tu@email.com"
+                  placeholder="tu@email.com o tu_usuario"
                   required
                 />
+                <p className="mt-1 text-xs text-gray-500">Puedes iniciar sesión con tu correo o tu nombre de usuario.</p>
               </div>
             </div>
 

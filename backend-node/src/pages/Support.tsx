@@ -7,9 +7,12 @@ const Support: React.FC = () => {
   const [tickets, setTickets] = useState<any[]>([]);
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
+  const [orders, setOrders] = useState<any[]>([]);
+  const [orderId, setOrderId] = useState<number | null>(null);
   const [activeTicket, setActiveTicket] = useState<any | null>(null);
   const [messages, setMessages] = useState<any[]>([]);
   const [reply, setReply] = useState("");
+  const [lastMsg, setLastMsg] = useState<Record<number, any>>({});
   const access = useAuthStore((s) => s.accessToken);
 
   useEffect(() => {
@@ -18,6 +21,15 @@ const Support: React.FC = () => {
       try {
         const t = await api.get<any[]>("support-tickets/");
         setTickets(t);
+        const os = await api.get<any[]>("orders/");
+        setOrders(os);
+        const entries = await Promise.all(t.map(async (tk) => {
+          try {
+            const ms = await api.get<any[]>(`support-tickets/${tk.id}/messages/`);
+            return [tk.id, ms[ms.length-1]] as const;
+          } catch { return [tk.id, null] as const; }
+        }));
+        setLastMsg(Object.fromEntries(entries));
       } catch {}
     };
     run();
@@ -27,10 +39,13 @@ const Support: React.FC = () => {
     e.preventDefault();
     if (!subject || !message) return;
     try {
-      const t = await api.post<any>("support-tickets/", { subject, message });
+      const payload: any = { subject, message };
+      if (orderId) payload.order = orderId;
+      const t = await api.post<any>("support-tickets/", payload);
       setTickets([t, ...tickets]);
       setSubject("");
       setMessage("");
+      setOrderId(null);
     } catch {}
   };
 
@@ -60,6 +75,12 @@ const Support: React.FC = () => {
             <h2 className="text-xl font-semibold">Nuevo ticket</h2>
             <input value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="Asunto" className="w-full px-3 py-2 border border-gray-300 rounded" />
             <textarea value={message} onChange={(e) => setMessage(e.target.value)} placeholder="Mensaje" className="w-full px-3 py-2 border border-gray-300 rounded" rows={4} />
+            <select value={orderId ?? ''} onChange={(e)=>setOrderId(e.target.value ? Number(e.target.value) : null)} className="w-full px-3 py-2 border border-gray-300 rounded">
+              <option value="">Pedido asociado (opcional)</option>
+              {orders.map((o:any)=> (
+                <option key={o.id} value={o.id}>#{o.id} • {o.status} • ${o.total}</option>
+              ))}
+            </select>
             <button className="w-full bg-blue-600 text-white py-2 rounded">Enviar</button>
           </form>
           <div className="mt-6 bg-white rounded-lg p-6 shadow">
@@ -68,7 +89,8 @@ const Support: React.FC = () => {
               {tickets.map((t) => (
                 <li key={t.id} className="border border-gray-200 rounded p-3 cursor-pointer" onClick={() => loadMessages(t)}>
                   <div className="font-medium">{t.subject}</div>
-                  <div className="text-sm text-gray-600">{t.status}</div>
+                  <div className="text-sm text-gray-600">{t.status} • {new Date(t.created_at).toLocaleString()}</div>
+                  <div className="text-xs text-gray-500 truncate">Última respuesta: {lastMsg[t.id]?.message ?? '—'}</div>
                 </li>
               ))}
             </ul>

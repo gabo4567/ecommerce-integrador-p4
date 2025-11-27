@@ -2,7 +2,7 @@ import { useAuthStore } from "../store/auth";
 
 const baseUrl = (import.meta.env.VITE_API_BASE_URL as string) ?? "http://localhost:8000/api/";
 
-type HttpMethod = "GET" | "POST" | "PUT" | "DELETE";
+type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 
 async function request<T>(path: string, method: HttpMethod = "GET", body?: any) {
   const auth = useAuthStore.getState();
@@ -51,6 +51,7 @@ export const api = {
   get: <T>(path: string) => request<T>(path, "GET"),
   post: <T>(path: string, body: any) => request<T>(path, "POST", body),
   put: <T>(path: string, body: any) => request<T>(path, "PUT", body),
+  patch: <T>(path: string, body: any) => request<T>(path, "PATCH", body),
   del: <T>(path: string) => request<T>(path, "DELETE"),
   baseUrl,
 };
