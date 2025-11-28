@@ -62,7 +62,18 @@ const ProductDetail: React.FC = () => {
       if (!pending) pending = await api.post<any>("orders/", {});
       const variant = variants.find((v) => v.id === selectedVariantId);
       const unitPrice = variant ? Number(variant.price) : Number(product.price);
-      await api.post("order-items/", { order: pending.id, product: product.id, quantity: 1, unit_price: unitPrice });
+      // Buscar si el producto ya está en el carrito
+      const items = await api.get<any[]>("order-items/?order=" + pending.id);
+      const existing = items.find((it: any) => {
+        const sameProduct = Number(it.product) === Number(product.id);
+        const sameVariant = variant ? Number(it.variant) === Number(selectedVariantId) : !it.variant;
+        return sameProduct && sameVariant;
+      });
+      if (existing) {
+        await api.patch(`order-items/${existing.id}/`, { quantity: existing.quantity + 1 });
+      } else {
+        await api.post("order-items/", { order: pending.id, product: product.id, quantity: 1, unit_price: unitPrice, ...(variant ? { variant: variant.id } : {}) });
+      }
       setMessage("Producto agregado al carrito");
       await refreshCart();
       navigate('/carrito');

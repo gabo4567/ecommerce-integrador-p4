@@ -120,16 +120,42 @@ class ShipmentViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         order = serializer.validated_data.get('order')
-        if not self.request.user.is_superuser and order.user != self.request.user:
+        if not self.request.user.is_staff and order.user != self.request.user:
             raise PermissionDenied("Solo puedes crear envíos para tus pedidos.")
-        if not self.request.user.is_superuser and order.status != 'paid':
+        if not self.request.user.is_staff and order.status != 'paid':
             raise PermissionDenied("El envío solo puede crearse para pedidos pagados.")
         serializer.save()
 
     def perform_update(self, serializer):
         if not self.request.user.is_staff:
             raise PermissionDenied("Solo staff puede actualizar envíos.")
-        serializer.save()
+        instance = self.get_object()
+        old_status = instance.status
+        updated_instance = serializer.save()
+        new_status = updated_instance.status
+        # Disparar webhook si el estado cambió
+        if old_status != new_status:
+            import requests, os
+            cloud_fn_url = os.environ.get('WEBHOOK_SHIPMENT_STATUS_URL')
+            user_token = None
+            if hasattr(self.request, 'auth') and self.request.auth:
+                user_token = self.request.auth
+            if cloud_fn_url and user_token:
+                payload = {
+                    'id': updated_instance.pk,
+                    'status': new_status,
+                    'tracking_number': updated_instance.tracking_number,
+                    'order': updated_instance.order_id,
+                    'old_status': old_status,
+                    'new_status': new_status,
+                    'reason': 'Cambio desde Django admin',
+                    'user_token': str(user_token)
+                }
+                headers = {'Authorization': f'Bearer {user_token}'}
+                try:
+                    resp = requests.post(cloud_fn_url, json=payload, headers=headers, timeout=5)
+                except Exception as e:
+                    pass
 
 class DiscountViewSet(viewsets.ModelViewSet):
     queryset = Discount.objects.all()

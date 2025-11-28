@@ -7,6 +7,8 @@ import { useAuthStore } from "../store/auth";
 import { useCartStore } from "../store/cart";
 
 const Checkout: React.FC = () => {
+    // Estado para saber si se usaron los datos del usuario
+    const [usedUserData, setUsedUserData] = useState(false);
   const [activeStep, setActiveStep] = useState(1);
   const [paymentMethod, setPaymentMethod] = useState('credit-card');
   const [addressLine, setAddressLine] = useState('');
@@ -14,6 +16,32 @@ const Checkout: React.FC = () => {
   const [addressCity, setAddressCity] = useState('');
   const [addressProvince, setAddressProvince] = useState('');
   const [addressPostal, setAddressPostal] = useState('');
+  // Estados para datos de contacto
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  // Autocompletar datos del usuario
+  const fillUserData = async () => {
+    try {
+      const me = await api.get<any>("users/me/");
+      setFirstName(me.first_name || '');
+      setLastName(me.last_name || '');
+      setEmail(me.email || '');
+      setPhone(me.phone || '');
+      // Si el usuario tiene dirección guardada, precargarla para el paso 2
+      if (me.address) {
+        // Intentar separar la dirección en los campos
+        const parts = me.address.split(',').map(p => p.trim());
+        setAddressLine(parts[0] || '');
+        setAddressApt(parts[1] || '');
+        setAddressCity(parts[2] || '');
+        setAddressProvince(parts[3] || '');
+        setAddressPostal(parts[4] || '');
+      }
+      setUsedUserData(true);
+    } catch {}
+  };
 
   const steps = [
     { id: 1, name: 'Información', completed: activeStep > 1 },
@@ -183,6 +211,8 @@ const Checkout: React.FC = () => {
                     </label>
                     <input
                       type="text"
+                      value={firstName}
+                      onChange={e => setFirstName(e.target.value)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                       placeholder="Juan"
                     />
@@ -193,6 +223,8 @@ const Checkout: React.FC = () => {
                     </label>
                     <input
                       type="text"
+                      value={lastName}
+                      onChange={e => setLastName(e.target.value)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                       placeholder="Pérez"
                     />
@@ -207,6 +239,8 @@ const Checkout: React.FC = () => {
                     <Mail className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
                     <input
                       type="email"
+                      value={email}
+                      onChange={e => setEmail(e.target.value)}
                       className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                       placeholder="tu@email.com"
                     />
@@ -221,18 +255,29 @@ const Checkout: React.FC = () => {
                     <Phone className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
                     <input
                       type="tel"
+                      value={phone}
+                      onChange={e => setPhone(e.target.value)}
                       className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                       placeholder="+1 234 567 8900"
                     />
                   </div>
                 </div>
                 
-                <button
-                  onClick={() => setActiveStep(2)}
-                  className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700"
-                >
-                  Continuar con el Envío
-                </button>
+                <div className="flex flex-col md:flex-row gap-4">
+                  <button
+                    type="button"
+                    onClick={fillUserData}
+                    className="w-full md:w-auto bg-gray-200 text-gray-800 py-3 rounded-lg font-semibold hover:bg-gray-300"
+                  >
+                    Usar mis datos
+                  </button>
+                  <button
+                    onClick={() => setActiveStep(2)}
+                    className="w-full md:w-auto bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700"
+                  >
+                    Continuar con el Envío
+                  </button>
+                </div>
               </div>
             )}
 
@@ -309,14 +354,6 @@ const Checkout: React.FC = () => {
                   </div>
                 </div>
                 
-                <div className="mb-6">
-                  <label className="flex items-center">
-                    <input type="checkbox" className="rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
-                    <span className="ml-2 text-sm text-gray-600">
-                      Guardar esta dirección para futuros pedidos
-                    </span>
-                  </label>
-                </div>
                 
                 <div className="flex space-x-4">
                   <button

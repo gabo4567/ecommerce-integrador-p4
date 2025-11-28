@@ -29,6 +29,10 @@ const ProductSearch: React.FC = () => {
     const [query, setQuery] = useState("");
 
     // ...existing useState declarations...
+    // Notificación de producto agregado al carrito
+    const [cartMessage, setCartMessage] = useState<string>("");
+    // Estado inicial para restaurar filtros
+    const [initialPriceRange, setInitialPriceRange] = useState([0, 0]);
     // Filtrar productos por categoría seleccionada
     let baseProducts = selectedCategories.length === 0
       ? products
@@ -84,6 +88,7 @@ const ProductSearch: React.FC = () => {
         const min = prices.length ? Math.min(...prices) : 0;
         const max = prices.length ? Math.max(...prices) : 0;
         setPriceRange([min, max]);
+        setInitialPriceRange([min, max]);
       } catch {}
       finally { setLoading(false); }
     };
@@ -123,8 +128,18 @@ const ProductSearch: React.FC = () => {
       const orders = await api.get<any[]>("orders/");
       let pending = orders.find((o: any) => o.status === "pending" && o.user === me.id);
       if (!pending) pending = await api.post<any>("orders/", {});
-      await api.post("order-items/", { order: pending.id, product: p.id, quantity: 1, unit_price: p.price });
+      // Buscar si el producto ya está en el carrito
+      const items = await api.get<any[]>(`order-items/?order=${pending.id}`);
+      // Solo agregar el producto normal, nunca variante
+      const existing = items.find((it: any) => it.product === p.id && !it.variant);
+      if (existing) {
+        await api.patch(`order-items/${existing.id}/`, { quantity: existing.quantity + 1 });
+      } else {
+        await api.post("order-items/", { order: pending.id, product: p.id, quantity: 1, unit_price: p.price });
+      }
       await refreshCart();
+      setCartMessage("Producto agregado al carrito");
+      setTimeout(() => setCartMessage(""), 1500);
     } catch {}
   };
 
@@ -136,8 +151,22 @@ const ProductSearch: React.FC = () => {
     );
   };
 
+  // Restaurar filtros
+  const restoreFilters = () => {
+    setSelectedCategories([]);
+    setPriceRange(initialPriceRange);
+    setSortBy('relevance');
+    setQuery("");
+  };
+
   return (
     <Layout>
+      {/* Notificación de producto agregado al carrito */}
+      {cartMessage && (
+        <div className="fixed top-6 right-6 z-50 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg animate-fade-in">
+          {cartMessage}
+        </div>
+      )}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-800 mb-4">Buscar Productos</h1>
         
@@ -191,7 +220,6 @@ const ProductSearch: React.FC = () => {
         {showFilters && (
           <div className="w-64 bg-white rounded-lg shadow-md p-6 h-fit">
             <h3 className="font-semibold text-gray-800 mb-4">Filtros</h3>
-            
             {/* Categories */}
             <div className="mb-6">
               <h4 className="font-medium text-gray-700 mb-3">Categorías</h4>
@@ -207,7 +235,6 @@ const ProductSearch: React.FC = () => {
                 </label>
               ))}
             </div>
-
             {/* Price Range */}
             <div className="mb-6">
               <h4 className="font-medium text-gray-700 mb-3">Precio</h4>
@@ -226,9 +253,15 @@ const ProductSearch: React.FC = () => {
                 </div>
               </div>
             </div>
-
-            <button className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700">
+            <button className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 mb-2">
               Aplicar Filtros
+            </button>
+            <button
+              className="w-full bg-gray-200 text-gray-800 py-2 rounded-lg hover:bg-gray-300"
+              style={{ marginTop: '0.5rem' }}
+              onClick={restoreFilters}
+            >
+              Restaurar
             </button>
           </div>
         )}

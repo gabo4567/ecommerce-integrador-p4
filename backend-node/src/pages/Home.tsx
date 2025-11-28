@@ -58,6 +58,9 @@ const Home: React.FC = () => {
     setShowHomeResults(Boolean(buscar));
   }, [location.search]);
 
+  // Notificación de producto agregado al carrito
+  const [cartMessage, setCartMessage] = useState<string>("");
+
   const addToCart = async (p: any) => {
     if (!access) { navigate('/login'); return; }
     try {
@@ -65,13 +68,30 @@ const Home: React.FC = () => {
       const orders = await api.get<any[]>("orders/");
       let pending = orders.find((o: any) => o.status === "pending" && o.user === me.id);
       if (!pending) pending = await api.post<any>("orders/", {});
-      await api.post("order-items/", { order: pending.id, product: p.id, quantity: 1, unit_price: p.price });
+      // Buscar si el producto normal (sin variante) ya está en el carrito
+      const items = await api.get<any[]>("order-items/?order=" + pending.id);
+      const existing = items.find((it: any) => Number(it.product) === Number(p.id) && (!it.variant || it.variant === null));
+      if (existing) {
+        // Actualizar cantidad
+        await api.patch(`order-items/${existing.id}/`, { quantity: existing.quantity + 1 });
+      } else {
+        // Crear nueva entrada
+        await api.post("order-items/", { order: pending.id, product: p.id, quantity: 1, unit_price: p.price });
+      }
       await refreshCart();
+      setCartMessage("Producto agregado al carrito");
+      setTimeout(() => setCartMessage(""), 1500);
     } catch {}
   };
 
   return (
     <Layout>
+      {/* Notificación de producto agregado al carrito */}
+      {cartMessage && (
+        <div className="fixed top-6 right-6 z-50 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg animate-fade-in">
+          {cartMessage}
+        </div>
+      )}
       {/* Hero Section */}
       <section className="bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-2xl p-8 mb-12">
         <div className="max-w-4xl mx-auto text-center">
@@ -204,7 +224,7 @@ const Home: React.FC = () => {
         
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {products.map((product) => (
-            <Link to={`/producto/${product.id}`} key={product.id} className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow">
+            <Link to={`/producto/${product.id}`} key={product.id} className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow block">
               <div className="relative">
                 <img
                   src={getProductImageCandidates(product)[0]}
@@ -215,35 +235,31 @@ const Home: React.FC = () => {
                   className="w-full h-48 object-contain rounded-t-lg"
                 />
                 {role !== 'admin' && (
-                  <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleFavorite(product.id); setProducts(prev => prev.slice()); }} className="absolute top-2 right-2 p-2 bg-white rounded-full shadow-md hover:bg-gray-50">
+                  <button
+                    onClick={e => { e.preventDefault(); e.stopPropagation(); toggleFavorite(product.id); setProducts(prev => prev.slice()); }}
+                    className="absolute top-2 right-2 p-2 bg-white rounded-full shadow-md hover:bg-gray-50"
+                  >
                     <Heart className={`h-5 w-5 ${isFavorite(product.id) ? 'text-red-500' : 'text-gray-400'}`} />
                   </button>
                 )}
-                
               </div>
-              
               <div className="p-4">
                 <p className="text-sm text-gray-500 mb-1">{product.category?.name || ""}</p>
                 <h3 className="font-semibold text-gray-800 mb-2 line-clamp-2">
                   {product.name}
                 </h3>
-                
                 <div className="flex items-center mb-2">
                   <div className="flex items-center">
-                    {[...Array(5)].map((_, i) => {
-                      const current = getRating(product.id)
-                      return (
-                        <Star
-                          key={i}
-                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); setRating(product.id, i+1); setProducts(prev => prev.slice()); }}
-                          className={`h-4 w-4 ${i < current ? 'text-yellow-400' : 'text-gray-300'} cursor-pointer`}
-                        />
-                      )
-                    })}
+                    {[...Array(5)].map((_, i) => (
+                      <Star
+                        key={i}
+                        onClick={e => { e.preventDefault(); e.stopPropagation(); setRating(product.id, i+1); setProducts(prev => prev.slice()); }}
+                        className={`h-4 w-4 ${i < getRating(product.id) ? 'text-yellow-400' : 'text-gray-300'} cursor-pointer`}
+                      />
+                    ))}
                   </div>
                   <span className="text-sm text-gray-500 ml-1">(0)</span>
                 </div>
-                
                 <div className="flex items-center justify-between">
                   <div>
                     <span className="text-lg font-bold text-gray-900">
@@ -252,7 +268,10 @@ const Home: React.FC = () => {
                     <span className="text-sm text-gray-500 line-through ml-2"></span>
                   </div>
                   {role !== 'admin' && (
-                    <button onClick={() => addToCart(product)} className="bg-blue-600 text-white p-2 rounded-lg hover:bg-blue-700 transition-colors">
+                    <button
+                      onClick={e => { e.preventDefault(); e.stopPropagation(); addToCart(product); }}
+                      className="bg-blue-600 text-white p-2 rounded-lg hover:bg-blue-700 transition-colors"
+                    >
                       <ShoppingCart className="h-5 w-5" />
                     </button>
                   )}
