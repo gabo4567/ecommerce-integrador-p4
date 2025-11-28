@@ -29,7 +29,7 @@ const Register: React.FC = () => {
     }
     const username = formData.email;
     try {
-      await api.post("register/", { username, email: formData.email, password: formData.password, first_name: formData.firstName, last_name: formData.lastName });
+      await api.post("register/", { username, email: formData.email, password: formData.password, first_name: formData.firstName, last_name: formData.lastName, phone: formData.phone, address: formData.address });
       navigate("/login");
     } catch (err: any) {
       setError("No se pudo registrar");

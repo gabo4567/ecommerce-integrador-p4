@@ -1,4 +1,4 @@
-from rest_framework import generics, permissions, viewsets
+from rest_framework import generics, permissions
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -11,20 +11,9 @@ from .serializers import (
     AdminUserSerializer,
 )
 from rest_framework_simplejwt.views import TokenObtainPairView
-<<<<<<< Updated upstream
-from django.contrib.auth import get_user_model
-
-User = get_user_model()
-
-class UsersAdminViewSet(viewsets.ModelViewSet):
-    queryset = User.objects.all()
-    serializer_class = AdminUserSerializer
-    permission_classes = [permissions.IsAdminUser]
-=======
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from .serializers import EmailTokenObtainPairSerializer
->>>>>>> Stashed changes
 
 class UserRegisterView(generics.CreateAPIView):
     serializer_class = UserSerializer
@@ -33,6 +22,23 @@ class UserRegisterView(generics.CreateAPIView):
 class MyTokenObtainPairView(TokenObtainPairView):
     serializer_class = MyTokenObtainPairSerializer
 
+
+class MeView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        serializer = UserSerializer(request.user)
+        return Response(serializer.data)
+
+    def put(self, request):
+        user = request.user
+        data = request.data or {}
+        for field in ['first_name', 'last_name', 'email', 'phone', 'address']:
+            if field in data:
+                setattr(user, field, data[field])
+        user.save()
+        serializer = UserSerializer(user)
+        return Response(serializer.data)
 
 class ChangePasswordView(APIView):
     permission_classes = [permissions.IsAuthenticated]

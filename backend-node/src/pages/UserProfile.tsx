@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import Layout from '../components/Layout';
 import { User, Mail, Phone, MapPin, Calendar, Package, Heart, Settings, Edit3, Save, X } from 'lucide-react';
+import { getFavorites, toggleFavorite, getProductImageCandidates, advanceImageFallback } from "../lib/utils";
 import { Link } from 'react-router-dom';
 import { api } from "../api/client";
 import { useAuthStore } from "../store/auth";
+import ConfirmDialog from '../components/ConfirmDialog';
 
 const UserProfile: React.FC = () => {
     // Estados para paginado y orden
@@ -26,6 +28,9 @@ const UserProfile: React.FC = () => {
 
   const [orders, setOrders] = useState<any[]>([]);
   const access = useAuthStore((s) => s.accessToken);
+  const role = useAuthStore((s) => s.role);
+  const [favorites, setFavorites] = useState<any[]>([]);
+  const [confirmUnfav, setConfirmUnfav] = useState<{open: boolean, product: any | null}>({ open: false, product: null });
   useEffect(() => {
     const run = async () => {
       if (!access) return;
@@ -37,15 +42,27 @@ const UserProfile: React.FC = () => {
           firstName: me.first_name || '',
           lastName: me.last_name || '',
           email: me.email || '',
-          phone: '',
-          address: '',
-          joinDate: '',
+          phone: me.phone || '',
+          address: me.address || '',
+          joinDate: me.date_joined ? new Date(me.date_joined).toLocaleDateString() : '',
           bio: ''
         });
       } catch {}
     };
     run();
   }, [access]);
+
+  useEffect(() => {
+    const loadFavorites = async () => {
+      const favIds = getFavorites();
+      if (favIds.length === 0) { setFavorites([]); return; }
+      try {
+        const prods = await api.get<any[]>("products/");
+        setFavorites(prods.filter(p => favIds.includes(p.id)));
+      } catch {}
+    };
+    loadFavorites();
+  }, []);
 
   // Mock wishlist items
   const wishlistItems = [
@@ -66,19 +83,51 @@ const UserProfile: React.FC = () => {
   ];
 
   const handleEdit = () => {
+    setActiveTab('profile');
     setIsEditing(true);
     setTempData(userData);
   };
 
-  const handleSave = () => {
-    setUserData(tempData);
-    setIsEditing(false);
+  const handleSave = async () => {
+    try {
+      const payload = {
+        first_name: tempData.firstName,
+        last_name: tempData.lastName,
+        email: tempData.email,
+        phone: tempData.phone,
+        address: tempData.address,
+      };
+      const me = await api.put<any>("users/me/", payload);
+      setUserData({
+        firstName: me.first_name || '',
+        lastName: me.last_name || '',
+        email: me.email || '',
+        phone: me.phone || '',
+        address: me.address || '',
+        joinDate: me.date_joined ? new Date(me.date_joined).toLocaleDateString() : userData.joinDate,
+        bio: tempData.bio,
+      });
+      setIsEditing(false);
+    } catch {}
   };
 
   const handleCancel = () => {
     setTempData(userData);
     setIsEditing(false);
   };
+
+  const openUnfavorite = (product: any) => {
+    setConfirmUnfav({ open: true, product });
+  };
+  const confirmUnfavorite = () => {
+    const p = confirmUnfav.product;
+    if (p) {
+      toggleFavorite(p.id);
+      setFavorites(prev => prev.filter(f => f.id !== p.id));
+    }
+    setConfirmUnfav({ open: false, product: null });
+  };
+  const closeUnfavorite = () => setConfirmUnfav({ open: false, product: null });
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -152,7 +201,7 @@ const UserProfile: React.FC = () => {
               {[
                 { id: 'profile', name: 'Perfil', icon: User },
                 { id: 'orders', name: 'Pedidos', icon: Package },
-                { id: 'wishlist', name: 'Favoritos', icon: Heart },
+                ...(role === 'admin' ? [] : [{ id: 'wishlist', name: 'Favoritos', icon: Heart }]),
                 { id: 'settings', name: 'Configuración', icon: Settings }
               ].map((tab) => (
                 <button
@@ -357,16 +406,19 @@ const UserProfile: React.FC = () => {
               </div>
             )}
 
-            {/* Wishlist Tab */}
-            {activeTab === 'wishlist' && (
+            {/* Wishlist Tab (solo usuarios no admin) */}
+            {activeTab === 'wishlist' && role !== 'admin' && (
               <div>
                 <h2 className="text-xl font-semibold text-gray-800 mb-6">Favoritos</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {wishlistItems.map((item) => (
-                    <div key={item.id} className="border border-gray-200 rounded-lg p-4">
+                  {favorites.map((item) => (
+                    <Link to={`/producto/${item.id}`} key={item.id} className="border border-gray-200 rounded-lg p-4 block hover:shadow">
                       <div className="flex items-center space-x-4">
                         <img
-                          src={item.image}
+                          src={getProductImageCandidates(item)[0]}
+                          data-candidates={JSON.stringify(getProductImageCandidates(item))}
+                          data-idx={0}
+                          onError={advanceImageFallback}
                           alt={item.name}
                           className="w-20 h-20 object-cover rounded-lg"
                         />
@@ -374,28 +426,32 @@ const UserProfile: React.FC = () => {
                           <h3 className="font-semibold text-gray-800 mb-1">{item.name}</h3>
                           <div className="flex items-center space-x-2">
                             <span className="text-lg font-bold text-gray-900">
-                              ${item.price.toFixed(2)}
-                            </span>
-                            <span className="text-sm text-gray-500 line-through">
-                              ${item.originalPrice.toFixed(2)}
-                            </span>
-                            <span className="text-sm text-green-600 font-medium">
-                              -{Math.round(((item.originalPrice - item.price) / item.originalPrice) * 100)}%
+                              ${Number(item.price).toFixed(2)}
                             </span>
                           </div>
                         </div>
                       </div>
                       <div className="flex space-x-2 mt-4">
-                        <button className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700">
+                        <button className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700" onClick={(e)=>{e.preventDefault(); e.stopPropagation();}}>
                           Agregar al Carrito
                         </button>
-                        <button className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
+                        <button className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50" onClick={(e)=>{ e.preventDefault(); e.stopPropagation(); openUnfavorite(item); }}>
                           <Heart className="h-5 w-5 text-red-500 fill-current" />
+                          <span className="ml-2 text-sm">Quitar</span>
                         </button>
                       </div>
-                    </div>
+                    </Link>
                   ))}
                 </div>
+                <ConfirmDialog
+                  open={confirmUnfav.open}
+                  title="Quitar de favoritos"
+                  message={`¿Estás seguro de desmarcar \"${confirmUnfav.product?.name || 'este producto'}\" de tus favoritos?`}
+                  confirmText="Sí, quitar"
+                  cancelText="Cancelar"
+                  onConfirm={confirmUnfavorite}
+                  onClose={closeUnfavorite}
+                />
               </div>
             )}
 

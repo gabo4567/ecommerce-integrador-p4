@@ -17,6 +17,7 @@ const Header: React.FC = () => {
   const refreshCart = useCartStore((s) => s.refreshCount);
 
   const [confirmLogout, setConfirmLogout] = useState(false);
+  const [query, setQuery] = useState("");
   const handleLogoutConfirm = () => {
     logout();
     setConfirmLogout(false);
@@ -58,10 +59,14 @@ const Header: React.FC = () => {
             <div className="relative">
               <input
                 type="text"
+                value={query}
+                onChange={(e)=>setQuery(e.target.value)}
+                onKeyDown={(e)=>{ if (e.key === 'Enter') navigate(location.pathname === '/' ? `/?buscar=${encodeURIComponent(query)}` : `/productos?buscar=${encodeURIComponent(query)}`); }}
                 placeholder="Buscar productos..."
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full pl-10 pr-20 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
               <Search className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+              <button onClick={()=>navigate(location.pathname === '/' ? `/?buscar=${encodeURIComponent(query)}` : `/productos?buscar=${encodeURIComponent(query)}`)} className="absolute right-2 top-1.5 bg-blue-600 text-white px-3 py-1 rounded">Buscar</button>
             </div>
           </div>
 

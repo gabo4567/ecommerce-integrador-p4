@@ -26,6 +26,12 @@ async function request<T>(path: string, method: HttpMethod = "GET", body?: any) 
       return retry.json() as Promise<T>;
     }
   }
+  if (res.status === 401 && method === "GET" && !auth.refreshToken) {
+    const retry = await fetch(new URL(path, baseUrl).toString());
+    if (retry.ok) {
+      return retry.json() as Promise<T>;
+    }
+  }
   if (!res.ok) throw new Error(await res.text());
   if (res.status === 204) return null as T;
   return res.json() as Promise<T>;

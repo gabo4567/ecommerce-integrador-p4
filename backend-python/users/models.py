@@ -10,6 +10,8 @@ class User(AbstractUser):
         ('support', 'Support'),
     )
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='customer')
+    phone = models.CharField(max_length=30, blank=True)
+    address = models.TextField(blank=True)
 
     def __str__(self):
         return self.username

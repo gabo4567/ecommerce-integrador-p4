@@ -75,6 +75,10 @@ class InvoiceViewSet(viewsets.ModelViewSet):
         order = serializer.validated_data.get('order')
         if not self.request.user.is_staff and order.user != self.request.user:
             raise PermissionDenied("No puedes generar factura de otro usuario.")
+        if not order.items.exists():
+            raise PermissionDenied("No puedes generar factura de un pedido sin ítems.")
+        if order.total <= 0:
+            raise PermissionDenied("No puedes generar factura de un pedido sin total.")
         serializer.save()
 
     def destroy(self, request, *args, **kwargs):
@@ -115,8 +119,11 @@ class ShipmentViewSet(viewsets.ModelViewSet):
         return Shipment.objects.filter(order__user=self.request.user)
 
     def perform_create(self, serializer):
-        if not self.request.user.is_staff:
-            raise PermissionDenied("Solo staff puede crear envíos.")
+        order = serializer.validated_data.get('order')
+        if not self.request.user.is_superuser and order.user != self.request.user:
+            raise PermissionDenied("Solo puedes crear envíos para tus pedidos.")
+        if not self.request.user.is_superuser and order.status != 'paid':
+            raise PermissionDenied("El envío solo puede crearse para pedidos pagados.")
         serializer.save()
 
     def perform_update(self, serializer):

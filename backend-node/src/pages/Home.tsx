@@ -1,23 +1,43 @@
 import React, { useEffect, useState } from 'react';
 import Layout from '../components/Layout';
 import { Star, ShoppingCart, Heart } from 'lucide-react';
+import { isFavorite, toggleFavorite, getRating, setRating, getProductImageSrc, categoryPlaceholders, getProductImageCandidates, getCategoryImageCandidates, advanceImageFallback, norm } from "../lib/utils";
 import { api } from "../api/client";
 import { useAuthStore } from "../store/auth";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Link } from "react-router-dom";
 import { useCartStore } from "../store/cart";
 
 const Home: React.FC = () => {
   const [products, setProducts] = useState<any[]>([]);
+  const [allProducts, setAllProducts] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
   const access = useAuthStore((s) => s.accessToken);
+  const role = useAuthStore((s) => s.role);
   const navigate = useNavigate();
   const refreshCart = useCartStore((s) => s.refreshCount);
+  const [homeQuery, setHomeQuery] = useState("");
+  const [showHomeResults, setShowHomeResults] = useState(false);
+  const tokens = norm(homeQuery).split(/\s+/).filter(Boolean);
+  const [favMessageHome, setFavMessageHome] = useState<{ id: number | null, text: string, variant: 'green' | 'red' }>({ id: null, text: '', variant: 'green' });
+  const homeResults = allProducts
+    .filter((p: any) => {
+      if (!tokens.length) return false;
+      const hay = `${norm(p.name)} ${norm(p.description || '')} ${norm(p.category?.name || p.category || '')}`;
+      return tokens.every(t => hay.includes(t));
+    })
+    .map((p: any) => {
+      const hay = `${norm(p.name)} ${norm(p.description || '')}`;
+      const score = tokens.reduce((acc, t) => acc + (hay.includes(t) ? 1 : 0), 0) + (norm(p.name).startsWith(tokens[0] || '') ? 1 : 0);
+      return { ...p, __score: score };
+    })
+    .sort((a: any, b: any) => (b.__score || 0) - (a.__score || 0));
   useEffect(() => {
     const run = async () => {
       try {
         const prods = await api.get<any[]>("products/");
         const cats = await api.get<any[]>("categories/");
+        setAllProducts(prods);
         setProducts(prods.slice(0, 4));
         const validUrl = (u: any) => typeof u === 'string' && /^https?:\/\//.test(u);
         setCategories(cats.map((c: any) => ({
@@ -29,6 +49,14 @@ const Home: React.FC = () => {
     };
     run();
   }, []);
+
+  const location = useLocation();
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const buscar = params.get('buscar') || '';
+    setHomeQuery(buscar);
+    setShowHomeResults(Boolean(buscar));
+  }, [location.search]);
 
   const addToCart = async (p: any) => {
     if (!access) { navigate('/login'); return; }
@@ -61,6 +89,7 @@ const Home: React.FC = () => {
               Explorar Categorías
             </Link>
           </div>
+          
         </div>
       </section>
 
@@ -78,7 +107,10 @@ const Home: React.FC = () => {
               >
                 <div className="mb-2 flex justify-center">
                   <img
-                    src={category.image_url ?? "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100'><rect width='100%' height='100%' fill='%23f3f4f6'/><circle cx='50' cy='50' r='30' fill='%23e5e7eb'/></svg>"}
+                    src={category.image_url ?? getCategoryImageCandidates(category.name)[0]}
+                    data-candidates={JSON.stringify(getCategoryImageCandidates(category.name))}
+                    data-idx={0}
+                    onError={advanceImageFallback}
                     alt={category.name}
                     className="w-16 h-16 object-contain rounded-full border"
                   />
@@ -89,6 +121,75 @@ const Home: React.FC = () => {
             ))}
         </div>
       </section>
+
+      {showHomeResults && tokens.length > 0 && (
+        <section className="mb-12">
+          <div className="flex justify-between items-center mb-8">
+            <h2 className="text-3xl font-bold text-gray-800">Resultados de la búsqueda</h2>
+            <div className="flex gap-2">
+              <Link to={`/productos?buscar=${encodeURIComponent(homeQuery)}`} className="text-blue-600 hover:text-blue-800 font-medium">Ver más →</Link>
+              <button className="text-gray-600 hover:text-gray-800" onClick={()=>{ setHomeQuery(""); setShowHomeResults(false); }}>Limpiar</button>
+            </div>
+          </div>
+          {homeResults.length === 0 ? (
+            <div className="text-gray-600">No se encontraron resultados.</div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {homeResults.slice(0, 8).map((product: any) => (
+                <Link to={`/producto/${product.id}`} key={product.id} className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow">
+                  <div className="relative">
+                    <img
+                      src={getProductImageCandidates(product)[0]}
+                      data-candidates={JSON.stringify(getProductImageCandidates(product))}
+                      data-idx={0}
+                      onError={advanceImageFallback}
+                      alt={product.name}
+                      className="w-full h-48 object-contain rounded-t-lg"
+                    />
+                    {role !== 'admin' && (
+                      <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); const wasFav = isFavorite(product.id); toggleFavorite(product.id); setProducts(prev => prev.slice()); setFavMessageHome({ id: product.id, text: wasFav ? 'Quitado de favoritos' : 'Agregado a favoritos', variant: wasFav ? 'red' : 'green' }); setTimeout(() => setFavMessageHome({ id: null, text: '', variant: 'green' }), 2000); }} className="absolute top-2 right-2 p-2 bg-white rounded-full shadow-md hover:bg-gray-50">
+                        <Heart className={`h-5 w-5 ${isFavorite(product.id) ? 'text-red-500' : 'text-gray-400'}`} />
+                      </button>
+                    )}
+                  </div>
+                  <div className="p-4">
+                    <p className="text-sm text-gray-500 mb-1">{product.category?.name || ""}</p>
+                    <h3 className="font-semibold text-gray-800 mb-2 line-clamp-2">{product.name}</h3>
+                    <div className="flex items-center mb-2">
+                      <div className="flex items-center">
+                        {[...Array(5)].map((_, i) => {
+                          const current = getRating(product.id);
+                          return (
+                            <Star
+                              key={i}
+                              onClick={(e) => { e.preventDefault(); e.stopPropagation(); setRating(product.id, i+1); setProducts(prev => prev.slice()); }}
+                              className={`h-4 w-4 ${i < current ? 'text-yellow-400' : 'text-gray-300'} cursor-pointer`}
+                            />
+                          );
+                        })}
+                      </div>
+                      <span className="text-sm text-gray-500 ml-1">(0)</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <span className="text-lg font-bold text-gray-900">${product.price}</span>
+                      </div>
+                      {role !== 'admin' && (
+                        <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); addToCart(product); }} className="bg-blue-600 text-white p-2 rounded-lg hover:bg-blue-700 transition-colors">
+                          <ShoppingCart className="h-5 w-5" />
+                        </button>
+                      )}
+                    </div>
+                    {favMessageHome.id === product.id && (
+                      <div className={`mt-2 text-xs ${favMessageHome.variant === 'red' ? 'text-red-600' : 'text-green-600'}`}>{favMessageHome.text}</div>
+                    )}
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
+        </section>
+      )}
 
       {/* Featured Products */}
       <section className="mb-12">
@@ -106,13 +207,18 @@ const Home: React.FC = () => {
             <Link to={`/producto/${product.id}`} key={product.id} className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow">
               <div className="relative">
                 <img
-                  src={(product.images && product.images[0]?.url) || "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='400' height='300'><rect width='100%' height='100%' fill='%23f3f4f6'/><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' fill='%239ca3af' font-size='20'>Sin imagen</text></svg>"}
+                  src={getProductImageCandidates(product)[0]}
+                  data-candidates={JSON.stringify(getProductImageCandidates(product))}
+                  data-idx={0}
+                  onError={advanceImageFallback}
                   alt={product.name}
                   className="w-full h-48 object-contain rounded-t-lg"
                 />
-                <button className="absolute top-2 right-2 p-2 bg-white rounded-full shadow-md hover:bg-gray-50">
-                  <Heart className="h-5 w-5 text-gray-400 hover:text-red-500" />
-                </button>
+                {role !== 'admin' && (
+                  <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleFavorite(product.id); setProducts(prev => prev.slice()); }} className="absolute top-2 right-2 p-2 bg-white rounded-full shadow-md hover:bg-gray-50">
+                    <Heart className={`h-5 w-5 ${isFavorite(product.id) ? 'text-red-500' : 'text-gray-400'}`} />
+                  </button>
+                )}
                 
               </div>
               
@@ -124,12 +230,16 @@ const Home: React.FC = () => {
                 
                 <div className="flex items-center mb-2">
                   <div className="flex items-center">
-                    {[...Array(5)].map((_, i) => (
-                      <Star
-                        key={i}
-                        className={`h-4 w-4 text-gray-300`}
-                      />
-                    ))}
+                    {[...Array(5)].map((_, i) => {
+                      const current = getRating(product.id)
+                      return (
+                        <Star
+                          key={i}
+                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); setRating(product.id, i+1); setProducts(prev => prev.slice()); }}
+                          className={`h-4 w-4 ${i < current ? 'text-yellow-400' : 'text-gray-300'} cursor-pointer`}
+                        />
+                      )
+                    })}
                   </div>
                   <span className="text-sm text-gray-500 ml-1">(0)</span>
                 </div>
@@ -141,9 +251,11 @@ const Home: React.FC = () => {
                     </span>
                     <span className="text-sm text-gray-500 line-through ml-2"></span>
                   </div>
-                  <button onClick={() => addToCart(product)} className="bg-blue-600 text-white p-2 rounded-lg hover:bg-blue-700 transition-colors">
-                    <ShoppingCart className="h-5 w-5" />
-                  </button>
+                  {role !== 'admin' && (
+                    <button onClick={() => addToCart(product)} className="bg-blue-600 text-white p-2 rounded-lg hover:bg-blue-700 transition-colors">
+                      <ShoppingCart className="h-5 w-5" />
+                    </button>
+                  )}
                 </div>
               </div>
             </Link>

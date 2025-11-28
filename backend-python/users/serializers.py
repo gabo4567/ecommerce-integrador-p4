@@ -22,11 +22,7 @@ class UserSerializer(serializers.ModelSerializer):
     role = serializers.SerializerMethodField()
     class Meta:
         model = User
-<<<<<<< Updated upstream
-        fields = ['id', 'username', 'email', 'password']
-=======
-        fields = ['id', 'username', 'email', 'password', 'first_name', 'last_name', 'role']
->>>>>>> Stashed changes
+        fields = ['id', 'username', 'email', 'password', 'first_name', 'last_name', 'phone', 'address', 'role', 'date_joined']
         extra_kwargs = {'password': {'write_only': True}}
 
     def get_role(self, obj):

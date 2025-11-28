@@ -3,7 +3,6 @@ const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
 
-// Inicializar app
 const app = express();
 app.use(cors());
 app.use(express.json());
@@ -14,8 +13,8 @@ if (process.env.MONGO_URI) {
     .catch(err => console.error('❌ Error connecting to MongoDB:', err));
 }
 
-const reviewsRoutes = require('./routes/reviews');
-const commentsRoutes = require('./routes/comments');
+const reviewsRoutes = require('../src/routes/reviews');
+const commentsRoutes = require('../src/routes/comments');
 
 app.use('/api/reviews', reviewsRoutes);
 app.use('/api/comments', commentsRoutes);
@@ -25,3 +24,4 @@ app.get('/', (req, res) => {
 });
 
 module.exports = app;
+

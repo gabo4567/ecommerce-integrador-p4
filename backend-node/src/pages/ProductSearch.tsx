@@ -3,6 +3,7 @@ import { useLocation } from "react-router-dom";
 import { Link } from "react-router-dom";
 import Layout from '../components/Layout';
 import { Star, ShoppingCart, Heart, Filter, ChevronDown } from 'lucide-react';
+import { isFavorite, toggleFavorite, getRating, setRating, getProductImageCandidates, advanceImageFallback, norm } from "../lib/utils";
 import { api } from "../api/client";
 import { useAuthStore } from "../store/auth";
 import { useNavigate } from "react-router-dom";
@@ -11,26 +12,48 @@ import { useCartStore } from "../store/cart";
 const ProductSearch: React.FC = () => {
       const location = useLocation();
     const [sortBy, setSortBy] = useState('relevance');
-    const [priceRange, setPriceRange] = useState([0, 2000]);
+    const [priceRange, setPriceRange] = useState([0, 0]);
     const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
     const [showFilters, setShowFilters] = useState(false);
 
     const [products, setProducts] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
     const [categories, setCategories] = useState<string[]>([]);
-    const brands = ['Apple', 'Samsung', 'Sony', 'Nintendo', 'Microsoft', 'Google'];
+    const [catIndex, setCatIndex] = useState<Record<string, number>>({});
+    const [favMessage, setFavMessage] = useState<{ id: number | null, text: string, variant: 'green' | 'red' }>({ id: null, text: '', variant: 'green' });
     const access = useAuthStore((s) => s.accessToken);
+    const role = useAuthStore((s) => s.role);
     const navigate = useNavigate();
     const refreshCart = useCartStore((s) => s.refreshCount);
+    const [purchasedIds, setPurchasedIds] = useState<number[]>([]);
+    const [query, setQuery] = useState("");
 
     // ...existing useState declarations...
     // Filtrar productos por categoría seleccionada
-    let filteredProducts = selectedCategories.length === 0
+    let baseProducts = selectedCategories.length === 0
       ? products
       : products.filter((p: any) =>
           selectedCategories.includes(
             p.category?.name || p.category
           )
         );
+
+    // Search filter (case/accents-insensitive, partial tokens)
+    const tokens = norm(query).split(/\s+/).filter(Boolean);
+    let filteredProducts = baseProducts.filter((p: any) => {
+      if (!tokens.length) return true
+      const hay = `${norm(p.name)} ${norm(p.description || '')} ${norm(p.category?.name || p.category || '')}`
+      return tokens.every(t => hay.includes(t))
+    }).map((p: any) => {
+      const hay = `${norm(p.name)} ${norm(p.description || '')} ${norm(p.category?.name || p.category || '')}`
+      const score = tokens.reduce((acc, t) => acc + (hay.includes(t) ? 1 : 0), 0) + (norm(p.name).startsWith(tokens[0] || '') ? 1 : 0)
+      return { ...p, __score: score }
+    })
+
+    // Filtrar por precio
+    if (priceRange[1] > 0) {
+      filteredProducts = filteredProducts.filter((p: any) => Number(p.price) >= priceRange[0] && Number(p.price) <= priceRange[1]);
+    }
 
     // Ordenar productos según sortBy
     if (sortBy === "price-low") {
@@ -39,27 +62,58 @@ const ProductSearch: React.FC = () => {
       filteredProducts = filteredProducts.slice().sort((a, b) => Number(b.price) - Number(a.price));
     } else if (sortBy === "newest") {
       filteredProducts = filteredProducts.slice().sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    } else if (sortBy === "rating") {
+      filteredProducts = filteredProducts.slice().sort((a, b) => getRating(b.id) - getRating(a.id));
+    } else {
+      filteredProducts = filteredProducts.slice().sort((a, b) => (b.__score || 0) - (a.__score || 0));
     }
   // ...existing code...
   useEffect(() => {
     const run = async () => {
       try {
+        setLoading(true);
         const prods = await api.get<any[]>("products/");
         const cats = await api.get<any[]>("categories/");
         setProducts(prods);
-        setCategories(cats.map((c: any) => c.name));
+        const catNames = cats.map((c: any) => c.name);
+        setCategories(catNames);
+        const init: Record<string, number> = {};
+        catNames.forEach(n => init[n] = 0);
+        setCatIndex(init);
+        const prices = prods.map(p => Number(p.price)).filter(n => !isNaN(n));
+        const min = prices.length ? Math.min(...prices) : 0;
+        const max = prices.length ? Math.max(...prices) : 0;
+        setPriceRange([min, max]);
       } catch {}
+      finally { setLoading(false); }
     };
     run();
   }, []);
+
+  useEffect(() => {
+    const loadPurchases = async () => {
+      if (!access) return;
+      try {
+        const me = await api.get<any>("users/me/");
+        const orders = await api.get<any[]>("orders/");
+        const myOrders = orders.filter(o => o.user === me.id && (o.status === 'paid' || o.status === 'delivered'));
+        const items = await api.get<any[]>("order-items/");
+        const ids = items.filter(it => myOrders.some(o => o.id === it.order)).map(it => Number(it.product));
+        setPurchasedIds(Array.from(new Set(ids)));
+      } catch {}
+    };
+    loadPurchases();
+  }, [access]);
 
   // Aplica el filtro de categoría solo cuando los productos estén cargados y la URL cambie
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const categoria = params.get("categoria");
+    const buscar = params.get("buscar");
     if (categoria && products.length > 0) {
       setSelectedCategories([categoria]);
     }
+    if (buscar) setQuery(buscar);
   }, [location.search, products]);
 
   const addToCart = async (p: any) => {
@@ -91,10 +145,12 @@ const ProductSearch: React.FC = () => {
         <div className="relative mb-6">
           <input
             type="text"
-            placeholder="Buscar productos, marcas, categorías..."
+            placeholder="Buscar productos..."
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
             className="w-full pl-4 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
-          <button className="absolute right-3 top-2.5 bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700">
+          <button className="absolute right-3 top-2.5 bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700" onClick={() => setQuery(query)}>
             Buscar
           </button>
         </div>
@@ -102,7 +158,7 @@ const ProductSearch: React.FC = () => {
         {/* Results Summary */}
         <div className="flex items-center justify-between mb-6">
           <p className="text-gray-600">
-            Mostrando <span className="font-semibold">{products.length}</span> resultados
+            Mostrando <span className="font-semibold">{filteredProducts.length}</span> resultados
           </p>
           <div className="flex items-center space-x-4">
             <button
@@ -158,8 +214,8 @@ const ProductSearch: React.FC = () => {
               <div className="space-y-3">
                 <input
                   type="range"
-                  min="0"
-                  max="2000"
+                  min={priceRange[0]}
+                  max={priceRange[1]}
                   value={priceRange[1]}
                   onChange={(e) => setPriceRange([priceRange[0], parseInt(e.target.value)])}
                   className="w-full"
@@ -171,106 +227,87 @@ const ProductSearch: React.FC = () => {
               </div>
             </div>
 
-            {/* Brands */}
-            <div className="mb-6">
-              <h4 className="font-medium text-gray-700 mb-3">Marcas</h4>
-              {brands.map((brand) => (
-                <label key={brand} className="flex items-center mb-2">
-                  <input
-                    type="checkbox"
-                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                  />
-                  <span className="ml-2 text-sm text-gray-600">{brand}</span>
-                </label>
-              ))}
-            </div>
-
             <button className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700">
               Aplicar Filtros
             </button>
           </div>
         )}
 
-        {/* Products Grid */}
-        <div className="flex-1">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredProducts.map((product) => (
-              <Link to={`/producto/${product.id}`} key={product.id} className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow">
-                <div className="relative">
-                  <img
-                    src={(product.images && product.images[0]?.url) || "https://via.placeholder.com/400"}
-                    alt={product.name}
-                    className="w-full h-48 object-contain rounded-t-lg bg-white"
-                  />
-                  <button className="absolute top-2 right-2 p-2 bg-white rounded-full shadow-md hover:bg-gray-50" onClick={e => { e.preventDefault(); e.stopPropagation(); addToCart(product); }}>
-                    <Heart className="h-5 w-5 text-gray-400 hover:text-red-500" />
-                  </button>
-                  {false && (
-                    <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center rounded-t-lg">
-                      <span className="text-white font-semibold">Agotado</span>
-                    </div>
-                  )}
-                </div>
-                <div className="p-4">
-                  <div className="flex justify-between items-start mb-2">
-                    <p className="text-sm text-gray-500">{product.category?.name || ""}</p>
-                    <p className="text-sm font-medium text-gray-600"></p>
+        {/* Products by Category */}
+        <div className="flex-1 space-y-10">
+          {loading && (
+            <div className="text-center py-12 text-gray-600">Cargando productos…</div>
+          )}
+          {(selectedCategories.length ? selectedCategories : categories).map((catName) => {
+            const list = filteredProducts.filter(p => (p.category?.name || p.category) === catName)
+            if (!list.length) return null
+            const index = catIndex[catName] || 0
+            const start = index * 5
+            const slice = list.slice(start, start + 5)
+            const maxIndex = Math.max(0, Math.ceil(list.length / 5) - 1)
+            return (
+              <div key={catName}>
+                <div className="flex items-center justify-between mb-3">
+                  <h2 className="text-xl font-semibold">{catName}</h2>
+                  <div className="flex gap-2">
+                    <button disabled={index === 0} onClick={() => setCatIndex(prev => ({ ...prev, [catName]: Math.max(0, index - 1) }))} className={`px-3 py-1 rounded ${index===0?'bg-gray-100 text-gray-400':'bg-gray-200 hover:bg-gray-300'}`}>←</button>
+                    <button disabled={index === maxIndex} onClick={() => setCatIndex(prev => ({ ...prev, [catName]: Math.min(maxIndex, index + 1) }))} className={`px-3 py-1 rounded ${index===maxIndex?'bg-gray-100 text-gray-400':'bg-gray-200 hover:bg-gray-300'}`}>→</button>
                   </div>
-                  <h3 className="font-semibold text-gray-800 mb-2 line-clamp-2">
-                    {product.name}
-                  </h3>
-                  <div className="flex items-center mb-3">
-                    <div className="flex items-center">
-                      {[...Array(5)].map((_, i) => (
-                        <Star
-                          key={i}
-                          className={`h-4 w-4 text-gray-300`}
+                </div>
+                <div className="grid grid-cols-5 gap-6">
+                  {slice.map((product) => (
+                    <Link to={`/producto/${product.id}`} key={product.id} className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow">
+                      <div className="relative">
+                        <img
+                          src={getProductImageCandidates(product)[0]}
+                          data-candidates={JSON.stringify(getProductImageCandidates(product))}
+                          data-idx={0}
+                          onError={advanceImageFallback}
+                          alt={product.name}
+                          className="w-full h-48 object-contain rounded-t-lg bg-white"
                         />
-                      ))}
-                    </div>
-                    <span className="text-sm text-gray-500 ml-1">(0)</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <span className="text-lg font-bold text-gray-900">
-                        ${product.price}
-                      </span>
-                      <span className="text-sm text-gray-500 line-through ml-2">
-                        
-                      </span>
-                    </div>
-                    <button
-                      onClick={e => { e.preventDefault(); e.stopPropagation(); addToCart(product); }}
-                      className={`p-2 rounded-lg transition-colors bg-blue-600 text-white hover:bg-blue-700`}
-                    >
-                      <ShoppingCart className="h-5 w-5" />
-                    </button>
-                  </div>
+                        {role !== 'admin' && (
+                        <button
+                          className="absolute top-2 right-2 p-2 bg-white rounded-full shadow-md hover:bg-gray-50"
+                          onClick={e => { e.preventDefault(); e.stopPropagation(); const wasFav = isFavorite(product.id); toggleFavorite(product.id); setFavMessage({ id: product.id, text: wasFav ? 'Quitado de favoritos' : 'Agregado a favoritos', variant: wasFav ? 'red' : 'green' }); setTimeout(() => setFavMessage({ id: null, text: '', variant: 'green' }), 1500); }}
+                        >
+                          <Heart className={`h-5 w-5 ${isFavorite(product.id) ? 'text-red-500' : 'text-gray-400'}`} />
+                        </button>
+                        )}
+                      </div>
+                      <div className="p-4">
+                        <h3 className="font-semibold text-gray-800 mb-2 line-clamp-2">{product.name}</h3>
+                        <div className="flex items-center mb-3">
+                          <div className="flex items-center">
+                            {[...Array(5)].map((_, i) => (
+                              <Star
+                                key={i}
+                                onClick={e => { e.preventDefault(); e.stopPropagation(); if (purchasedIds.includes(product.id)) setRating(product.id, i+1); }}
+                                className={`h-4 w-4 ${i < getRating(product.id) ? 'text-yellow-400' : 'text-gray-300'} ${purchasedIds.includes(product.id) ? 'cursor-pointer' : 'opacity-50 cursor-not-allowed'}`}
+                                aria-label={purchasedIds.includes(product.id) ? 'Calificar' : 'Califica después de comprar y recibir'}
+                              />
+                            ))}
+                          </div>
+                          <span className="text-sm text-gray-500 ml-1">({getRating(product.id)})</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-lg font-bold text-gray-900">${product.price}</span>
+                          {role !== 'admin' && (
+                            <button onClick={e => { e.preventDefault(); e.stopPropagation(); addToCart(product); }} className={`p-2 rounded-lg transition-colors bg-blue-600 text-white hover:bg-blue-700`}>
+                              <ShoppingCart className="h-5 w-5" />
+                            </button>
+                          )}
+                        </div>
+                        {favMessage.id === product.id && (
+                          <div className={`mt-2 text-xs ${favMessage.variant === 'red' ? 'text-red-600' : 'text-green-600'}`}>{favMessage.text}</div>
+                        )}
+                      </div>
+                    </Link>
+                  ))}
                 </div>
-              </Link>
-            ))}
-          </div>
-
-          {/* Pagination */}
-          <div className="flex justify-center mt-8">
-            <div className="flex space-x-2">
-              <button className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
-                Anterior
-              </button>
-              <button className="px-3 py-2 bg-blue-600 text-white rounded-lg">
-                1
-              </button>
-              <button className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
-                2
-              </button>
-              <button className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
-                3
-              </button>
-              <button className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
-                Siguiente
-              </button>
-            </div>
-          </div>
+              </div>
+            )
+          })}
         </div>
       </div>
     </Layout>
