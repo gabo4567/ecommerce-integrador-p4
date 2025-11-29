@@ -9,7 +9,7 @@ class AdminProfileSerializer(serializers.ModelSerializer):
     display_name = serializers.SerializerMethodField()
     class Meta:
         model = User
-        fields = ['id', 'email', 'first_name', 'last_name', 'role', 'display_name']
+        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'role', 'display_name']
     def get_role(self, obj):
         return 'ADMIN' if obj.role == 'admin' or obj.is_staff else 'CLIENT'
     def get_display_name(self, obj):
@@ -23,9 +23,11 @@ class AdminProductSerializer(serializers.ModelSerializer):
         fields = ['id','name','description','price','stock','category','category_id','created_by','created_at']
 
 class AdminOrderSerializer(serializers.ModelSerializer):
+    user_username = serializers.CharField(source='user.username', read_only=True)
+    user_email = serializers.EmailField(source='user.email', read_only=True)
     class Meta:
         model = Order
-        fields = ['id','user','created_at','status','total']
+        fields = ['id','user','user_username','user_email','created_at','status','total']
 
 class AdminShipmentSerializer(serializers.ModelSerializer):
     class Meta:

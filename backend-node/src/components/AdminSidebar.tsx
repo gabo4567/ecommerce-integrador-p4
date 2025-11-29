@@ -38,8 +38,10 @@ export default function AdminSidebar() {
         <button onClick={toggle} className="px-2 py-1 text-sm bg-gray-100 border border-gray-200 rounded hover:bg-gray-200">Contraer</button>
       </div>
       <nav className="px-4 py-4 grid gap-2">
+        <Link to="/admin/ordenes" className={itemClass('/admin/ordenes')}>Órdenes</Link>
         <Link to="/admin/productos" className={itemClass('/admin/productos')}>Productos</Link>
         <Link to="/admin/envios" className={itemClass('/admin/envios')}>Envíos</Link>
+        <Link to="/admin/usuarios" className={itemClass('/admin/usuarios')}>Usuarios</Link>
         <Link to="/admin/auditoria" className={itemClass('/admin/auditoria')}>Auditoría</Link>
         <Link to="/ajustes" className={itemClass('/ajustes')}>Ajustes del sistema</Link>
         <Link to="/admin/soporte" className={itemClass('/admin/soporte')}>Soporte</Link>

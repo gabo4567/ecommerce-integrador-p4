@@ -78,7 +78,7 @@ const Checkout: React.FC = () => {
             name: p.name || `Producto ${it.product}`,
             price: Number(it.unit_price),
             quantity: it.quantity,
-            image: (p.images && p.images[0]?.url) || "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100'><rect width='100%' height='100%' fill='%23f3f4f6'/><circle cx='50' cy='50' r='30' fill='%23e5e7eb'/></svg>",
+            image: (p.images && p.images[0]?.url) || "https://via.placeholder.com/100",
           };
         });
         setOrderItems(mapped);
@@ -122,17 +122,21 @@ const Checkout: React.FC = () => {
     const fullAddress = [addressLine, addressApt, addressCity, addressProvince, addressPostal].filter(Boolean).join(', ');
     const tracking = `TRK${Date.now()}`;
     try {
-      try { await api.put(`orders/${orderId}/`, { status: 'paid' }); } catch {}
       const shipment = await api.post<any>("shipments/", { order: orderId, address: fullAddress || 'Sin dirección', carrier: 'Feraytek Logistics', tracking_number: tracking, status: 'preparing' });
       setTrackingNumber(shipment.tracking_number);
       setConfirmDisabled(true);
       setMessage(`¡Gracias por tu compra! Tu número de seguimiento es ${shipment.tracking_number}`);
+      try {
+        try { await api.put(`orders/${orderId}/`, { status: 'paid' }); } catch {}
+      } catch {}
       setActiveStep(4);
       await refreshCart();
     } catch {
       // Aún confirmamos la compra aunque el envío requiera staff
       setConfirmDisabled(true);
-      try { await api.put(`orders/${orderId}/`, { status: 'paid' }); } catch {}
+      try {
+        try { await api.put(`orders/${orderId}/`, { status: 'paid' }); } catch {}
+      } catch {}
       try {
         const ticket = await api.post<any>("support-tickets/", {
           subject: `Solicitud de envío para pedido ${orderId}`,

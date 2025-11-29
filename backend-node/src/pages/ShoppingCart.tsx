@@ -8,7 +8,6 @@ import { useNavigate } from "react-router-dom";
 
 const ShoppingCart: React.FC = () => {
   const [cartItems, setCartItems] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
   const [orderId, setOrderId] = useState<number | null>(null);
   const [promoCode, setPromoCode] = useState("");
   const [promoMessage, setPromoMessage] = useState<string | null>(null);
@@ -21,10 +20,8 @@ const ShoppingCart: React.FC = () => {
     const run = async () => {
       if (!access) return;
       try {
-        setLoading(true);
-        const me = await api.get<any>("users/me/");
         const orders = await api.get<any[]>("orders/");
-        let pending = orders.find((o: any) => o.status === "pending" && o.user === me.id);
+        let pending = orders.find((o: any) => o.status === "pending");
         if (!pending) pending = await api.post<any>("orders/", {});
         setOrderId(pending.id);
         const items = await api.get<any[]>(`order-items/?order=${pending.id}`);
@@ -37,14 +34,13 @@ const ShoppingCart: React.FC = () => {
             name: p.name || `Producto ${it.product}`,
             price: Number(it.unit_price),
             quantity: it.quantity,
-            image: (p.images && p.images[0]?.url) || "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100'><rect width='100%' height='100%' fill='%23f3f4f6'/><circle cx='50' cy='50' r='30' fill='%23e5e7eb'/></svg>",
+            image: (p.images && p.images[0]?.url) || "/favicon.svg",
           };
         });
         setCartItems(mapped);
         const ods = await api.get<any[]>(`order-discounts/?order=${pending.id}`);
         setAppliedDiscounts(ods);
       } catch {}
-      finally { setLoading(false); }
     };
     run();
   }, [access]);
@@ -91,18 +87,12 @@ const ShoppingCart: React.FC = () => {
       <div className="max-w-6xl mx-auto">
         <h1 className="text-3xl font-bold text-gray-800 mb-8">Carrito de Compras</h1>
         
-        {loading ? (
-          <div className="text-center py-16">
-            <ShoppingBag className="h-24 w-24 text-gray-300 mx-auto mb-4" />
-            <h2 className="text-2xl font-semibold text-gray-600 mb-2">Cargando carrito de compras…</h2>
-            <p className="text-gray-500">Por favor espera</p>
-          </div>
-        ) : cartItems.length === 0 ? (
+        {cartItems.length === 0 ? (
           <div className="text-center py-16">
             <ShoppingBag className="h-24 w-24 text-gray-300 mx-auto mb-4" />
             <h2 className="text-2xl font-semibold text-gray-600 mb-2">Tu carrito está vacío</h2>
             <p className="text-gray-500 mb-8">¡Agrega algunos productos para comenzar!</p>
-            <button onClick={() => navigate('/productos')} className="bg-blue-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-blue-700">
+            <button className="bg-blue-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-blue-700">
               Continuar Comprando
             </button>
           </div>
@@ -182,7 +172,7 @@ const ShoppingCart: React.FC = () => {
               </div>
               
               <div className="mt-6">
-                <button onClick={() => navigate('/productos')} className="text-blue-600 hover:text-blue-800 font-medium">
+                <button className="text-blue-600 hover:text-blue-800 font-medium">
                   ← Continuar Comprando
                 </button>
               </div>
