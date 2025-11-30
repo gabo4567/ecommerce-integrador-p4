@@ -141,11 +141,6 @@ const UserProfile: React.FC = () => {
         return 'bg-gray-100 text-gray-800';
     }
   };
-  const orderStatusHelp = (s: string) => {
-    if (s.toLowerCase() === 'pending') return 'Carrito abierto sin confirmar';
-    if (s.toLowerCase() === 'paid') return 'Pedido abonado';
-    return '';
-  };
 
   return (
     <Layout>
@@ -376,11 +371,8 @@ const UserProfile: React.FC = () => {
                           </div>
                           <div className="text-right">
                             <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(order.status)}`}>
-                              {order.status}
+                              {order.status === 'paid' ? 'Pagado' : order.status === 'pending' ? 'Pendiente' : order.status}
                             </span>
-                            {orderStatusHelp(order.status) && (
-                              <div className="text-xs text-gray-500">{orderStatusHelp(order.status)}</div>
-                            )}
                             <p className="text-lg font-semibold text-gray-800 mt-1">
                               ${Number(order.total).toFixed(2)}
                             </p>

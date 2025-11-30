@@ -89,7 +89,7 @@ const Checkout: React.FC = () => {
 
   const subtotal = orderItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
   const shipping = 15.99;
-  const tax = subtotal * 0.08;
+  const tax = subtotal * 0.21;
   const total = subtotal + shipping + tax;
 
   const placeOrder = async () => {
@@ -529,7 +529,7 @@ const Checkout: React.FC = () => {
                   <span>${shipping.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Impuesto</span>
+                  <span className="text-gray-600">Impuesto (21%)</span>
                   <span>${tax.toFixed(2)}</span>
                 </div>
                 <hr className="border-gray-200" />

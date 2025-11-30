@@ -19,24 +19,6 @@ const OrderDetails: React.FC = () => {
     if (s === 'void') return 'Anulado';
     return s;
   };
-  const statusHelp = (s: string) => {
-    if (s === 'pending') return 'Carrito abierto sin confirmar ni pagar';
-    if (s === 'paid') return 'Pedido abonado';
-    if (s === 'void') return 'Pedido anulado';
-    return '';
-  };
-  const paymentHelp = (s: string) => {
-    if (s === 'pending') return 'Pago registrado, en revisión';
-    if (s === 'approved') return 'Pago aprobado';
-    if (s === 'rejected') return 'Pago rechazado';
-    return '';
-  };
-  const invoiceHelp = (s: string) => {
-    if (s === 'pending') return 'Factura emitida pendiente de pago';
-    if (s === 'paid') return 'Factura saldada';
-    if (s === 'void') return 'Factura anulada';
-    return '';
-  };
   const shipmentHelp = (s: string) => {
     if (s === 'preparing') return 'Preparando paquete';
     if (s === 'shipped') return 'Despachado al transportista';
@@ -154,8 +136,6 @@ const OrderDetails: React.FC = () => {
       <div className="max-w-5xl mx-auto space-y-8">
         <div className="bg-white rounded-lg shadow p-6">
           <h1 className="text-2xl font-bold text-gray-800 mb-2">Pedido #{order.id}</h1>
-          <p className="text-gray-600">Estado: {statusText(order.status)}</p>
-          
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -183,18 +163,12 @@ const OrderDetails: React.FC = () => {
                 <div className="text-gray-800">Total del pedido</div>
                 <div className="font-medium">${Number(displayTotal()).toFixed(2)}</div>
               </div>
-              {statusHelp(order.status) && (
-                <div className="text-xs text-gray-500">{statusHelp(order.status)}</div>
-              )}
               {payments.map((p) => (
                 <div key={p.id} className="flex justify-between">
                   <div className="text-gray-800">{p.method}</div>
                   <div className="text-gray-600">{p.status}</div>
                   <div className="font-medium">${Number(p.amount).toFixed(2)}</div>
                 </div>
-              ))}
-              {payments.map((p) => (
-                <div key={`ph-${p.id}`} className="text-xs text-gray-500">{paymentHelp(p.status)}</div>
               ))}
             </div>
           </div>
@@ -209,9 +183,6 @@ const OrderDetails: React.FC = () => {
                   <div className="font-medium">${Number(f.total).toFixed(2)}</div>
                 </div>
               ))}
-              {invoices.map((f) => (
-                <div key={`ih-${f.id}`} className="text-xs text-gray-500">{invoiceHelp(f.status)}</div>
-              ))}
               {invoices.length === 0 && <div className="text-gray-600">Sin facturas</div>}
               <div className="mt-3">
                 <button onClick={requestInvoice} disabled={invoices.some((f: any) => f.status !== 'void')} className={`px-4 py-2 rounded ${invoices.some((f: any) => f.status !== 'void') ? 'bg-gray-300 text-gray-600 cursor-not-allowed' : 'bg-blue-600 text-white'}`}>Solicitar factura</button>
@@ -225,13 +196,6 @@ const OrderDetails: React.FC = () => {
               {shipments.map((s) => (
                 <div key={s.id} className="border border-gray-200 rounded p-3">
                   <div className="font-medium">Tracking: {s.tracking_number || 'N/A'}</div>
-                  <div className="text-gray-600">Estado: {s.status}</div>
-                  {shipmentHelp(s.status) && <div className="text-xs text-gray-500">{shipmentHelp(s.status)}</div>}
-                  <div className="text-gray-600">Carrier: {s.carrier}</div>
-                  <div className="flex gap-2 mt-2">
-                    <button onClick={() => updateShipmentStatus(s.id, 'shipped')} className="px-3 py-1 bg-blue-600 text-white rounded">Marcar enviado</button>
-                    <button onClick={() => updateShipmentStatus(s.id, 'delivered')} className="px-3 py-1 bg-green-600 text-white rounded">Marcar entregado</button>
-                  </div>
                 </div>
               ))}
               {shipments.length === 0 && <div className="text-gray-600">Sin envíos</div>}
@@ -240,15 +204,55 @@ const OrderDetails: React.FC = () => {
           </div>
 
           <div className="md:col-span-2 bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-semibold text-gray-800 mb-4">Historial del Pedido</h2>
-            <div className="space-y-2">
-              {history.map((h) => (
-                <div key={h.id} className="flex justify-between">
-                  <div className="text-gray-800">{h.old_status} → {h.new_status}</div>
-                  <div className="text-gray-600">{new Date(h.changed_at).toLocaleString()}</div>
-                </div>
-              ))}
-              {history.length === 0 && <div className="text-gray-600">Sin historial</div>}
+            <h2 className="text-xl font-semibold text-gray-800 mb-4">Estado del Pedido</h2>
+            <div className="flex items-center gap-6 justify-center py-6">
+              {(() => {
+                // Estados y sus iconos y nombres en español
+                const iconSize = 80;
+                const steps = [
+                  { key: 'pending', label: 'Procesando pago' },
+                  { key: 'paid', label: 'Pago confirmado' },
+                  { key: 'preparing', label: 'Preparando envío' },
+                  { key: 'shipped', label: 'Envío en camino' },
+                  { key: 'delivered', label: 'Entregado' },
+                ];
+                const cancelStep = { key: 'cancelled', label: 'Pedido cancelado' };
+                // Estado actual
+                let current = order.status;
+                // Si el pedido está pagado, revisar el estado del envío
+                if (current === 'paid' && shipments && shipments.length > 0) {
+                  const shipmentStatus = shipments[0].status;
+                  if (["preparing", "shipped", "delivered", "cancelled"].includes(shipmentStatus)) {
+                    current = shipmentStatus;
+                  }
+                }
+                // Si cancelado, todos rojos y mostrar cancelado al final
+                if (current === 'cancelled') {
+                  return <div className="flex items-center gap-6">{
+                    steps.map((step, idx) => (
+                      <div key={step.key} className="flex flex-col items-center">
+                        <div style={{width:iconSize, height:iconSize}} className="bg-red-500 rounded-full flex items-center justify-center"></div>
+                        <span className="text-xs text-red-600 mt-2">{step.label}</span>
+                        {idx < steps.length - 1 && <div className="w-8 h-1 bg-red-300 mx-1" />}
+                      </div>
+                    ))
+                  }
+                  <div className="flex flex-col items-center">
+                    <div style={{width:iconSize, height:iconSize}} className="bg-red-500 rounded-full flex items-center justify-center"></div>
+                    <span className="text-xs text-red-600 mt-2">{cancelStep.label}</span>
+                  </div>
+                  </div>;
+                }
+                // Si no cancelado, iluminar hasta el estado actual
+                const idx = steps.findIndex(s => s.key === current);
+                return steps.map((step, i) => (
+                  <div key={step.key} className="flex flex-col items-center">
+                    <div style={{width:iconSize, height:iconSize}} className={`${i <= idx ? 'bg-green-500' : 'bg-gray-300'} rounded-full flex items-center justify-center`}></div>
+                    <span className={`text-xs mt-2 ${i <= idx ? 'text-green-600' : 'text-gray-500'}`}>{step.label}</span>
+                    {i < steps.length - 1 && <div className={`w-8 h-1 ${i < idx ? 'bg-green-300' : 'bg-gray-300'} mx-1`} />}
+                  </div>
+                ));
+              })()}
             </div>
           </div>
         </div>

@@ -9,6 +9,7 @@ const OrderTracking: React.FC = () => {
   const [orderFound, setOrderFound] = useState(false);
   const [shipment, setShipment] = useState<any | null>(null);
   const [history, setHistory] = useState<any[]>([]);
+  const [searched, setSearched] = useState(false);
   const access = useAuthStore((s) => s.accessToken);
 
   const orderData = shipment ? {
@@ -32,19 +33,26 @@ const OrderTracking: React.FC = () => {
 
   const handleTrackOrder = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSearched(true);
     if (!access) return;
     if (trackingNumber.trim()) {
       try {
         const shipments = await api.get<any[]>("shipments/");
         const s = shipments.find((x: any) => (x.tracking_number || "").toLowerCase() === trackingNumber.toLowerCase());
-        if (!s) { setOrderFound(false); return; }
+        if (!s) { setOrderFound(false); setShipment(null); setHistory([]); return; }
         setShipment(s);
         setOrderFound(true);
         const hs = await api.get<any[]>(`order-status-history/?order=${s.order}`);
         setHistory(hs);
       } catch {
         setOrderFound(false);
+        setShipment(null);
+        setHistory([]);
       }
+    } else {
+      setOrderFound(false);
+      setShipment(null);
+      setHistory([]);
     }
   };
 
@@ -65,6 +73,24 @@ const OrderTracking: React.FC = () => {
       case 'Pedido confirmado':
       case 'Pedido procesado':
         return 'bg-yellow-100 text-yellow-800';
+      case 'pending':
+      case 'Pendiente':
+        return 'bg-gray-100 text-gray-800';
+      case 'paid':
+      case 'Pagado':
+        return 'bg-green-100 text-green-800';
+      case 'preparing':
+      case 'Preparando':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'shipped':
+      case 'Enviado':
+        return 'bg-blue-100 text-blue-800';
+      case 'delivered':
+      case 'Entregado':
+        return 'bg-green-100 text-green-800';
+      case 'cancelled':
+      case 'Cancelado':
+        return 'bg-red-100 text-red-800';
       default:
         return 'bg-gray-100 text-gray-800';
     }
@@ -106,7 +132,7 @@ const OrderTracking: React.FC = () => {
           </form>
         </div>
 
-        {orderFound && orderData && (
+        {searched && orderFound && orderData && (
           <div className="space-y-8">
             {/* Order Status Overview */}
             <div className="bg-white rounded-lg shadow-md p-6">
@@ -120,7 +146,17 @@ const OrderTracking: React.FC = () => {
                   </p>
                 </div>
                 <span className={`px-4 py-2 rounded-full font-medium ${getStatusColor(orderData.status)}`}>
-                  {orderData.status}
+                  {(() => {
+                    switch (orderData.status) {
+                      case 'pending': return 'Pendiente';
+                      case 'paid': return 'Pagado';
+                      case 'preparing': return 'Preparando';
+                      case 'shipped': return 'Enviado';
+                      case 'delivered': return 'Entregado';
+                      case 'cancelled': return 'Cancelado';
+                      default: return orderData.status;
+                    }
+                  })()}
                 </span>
               </div>
               
@@ -165,65 +201,34 @@ const OrderTracking: React.FC = () => {
                     </div>
                     <div className="flex-1">
                       <div className="flex items-center space-x-4 mb-1">
-                        <h3 className="font-semibold text-gray-800">{step.status}</h3>
+                        <h3 className="font-semibold text-gray-800">{
+                          (() => {
+                            switch (step.status) {
+                              case 'pending': return 'Pendiente';
+                              case 'paid': return 'Pagado';
+                              case 'preparing': return 'Preparando';
+                              case 'shipped': return 'Enviado';
+                              case 'delivered': return 'Entregado';
+                              case 'cancelled': return 'Cancelado';
+                              default: return step.status;
+                            }
+                          })()
+                        }</h3>
                         <span className="text-sm text-gray-500">
                           <Calendar className="inline h-4 w-4 mr-1" />
                           {step.date}
                         </span>
                       </div>
-                      <p className="text-gray-600 mb-1">{step.description}</p>
-                      <div className="flex items-center text-sm text-gray-500">
-                        <MapPin className="h-4 w-4 mr-1" />
-                        {step.location}
-                      </div>
+                      {step.description && (
+                        <p className="text-gray-600 mb-1">{step.description}</p>
+                      )}
+                      {/* Ubicación eliminada */}
                     </div>
                     {index < orderData.trackingHistory.length - 1 && (
                       <div className="absolute left-3 mt-12 w-px h-16 bg-gray-200" />
                     )}
                   </div>
                 ))}
-              </div>
-            </div>
-
-            {/* Order Items */}
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <h2 className="text-xl font-semibold text-gray-800 mb-6">
-                Artículos del Pedido
-              </h2>
-              
-              <div className="space-y-4">
-                {orderData.items.map((item) => (
-                  <div key={item.id} className="flex items-center space-x-4 p-4 border border-gray-200 rounded-lg">
-                    <img
-                      src={item.image}
-                      alt={item.name}
-                      className="w-16 h-16 object-cover rounded-lg"
-                    />
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-gray-800">{item.name}</h3>
-                      <p className="text-sm text-gray-600">
-                        Cantidad: {item.quantity}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-semibold text-gray-800">
-                        ${item.price.toFixed(2)}
-                      </p>
-                      <p className="text-sm text-gray-600">
-                        Total: ${(item.price * item.quantity).toFixed(2)}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              
-              <div className="mt-6 pt-4 border-t border-gray-200">
-                <div className="flex justify-between items-center">
-                  <span className="text-lg font-semibold text-gray-800">Total del Pedido</span>
-                  <span className="text-2xl font-bold text-gray-900">
-                    ${orderData.totalAmount.toFixed(2)}
-                  </span>
-                </div>
               </div>
             </div>
 
@@ -242,7 +247,7 @@ const OrderTracking: React.FC = () => {
           </div>
         )}
 
-        {!orderFound && trackingNumber && (
+        {searched && !orderFound && trackingNumber && (
           <div className="bg-white rounded-lg shadow-md p-8 text-center">
             <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <Search className="h-8 w-8 text-red-600" />
