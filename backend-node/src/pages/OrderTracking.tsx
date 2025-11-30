@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import ChatSoporte from '../components/ChatSoporte';
 import Layout from '../components/Layout';
 import { Package, Truck, CheckCircle, Clock, MapPin, Calendar, Search, ArrowRight } from 'lucide-react';
 import { api } from "../api/client";
@@ -11,6 +12,7 @@ const OrderTracking: React.FC = () => {
   const [history, setHistory] = useState<any[]>([]);
   const [searched, setSearched] = useState(false);
   const access = useAuthStore((s) => s.accessToken);
+  const [showChat, setShowChat] = useState(false);
 
   const orderData = shipment ? {
     orderNumber: String(shipment.order),
@@ -234,7 +236,7 @@ const OrderTracking: React.FC = () => {
 
             {/* Action Buttons */}
             <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4">
-              <button className="flex-1 bg-blue-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-blue-700">
+              <button className="flex-1 bg-blue-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-blue-700" onClick={() => setShowChat(true)}>
                 Contactar Soporte
               </button>
               <button className="flex-1 border border-gray-300 text-gray-700 py-3 px-6 rounded-lg font-semibold hover:bg-gray-50">
@@ -244,6 +246,7 @@ const OrderTracking: React.FC = () => {
                 Compartir Seguimiento
               </button>
             </div>
+            {showChat && <ChatSoporte orderId={shipment?.order} onClose={() => setShowChat(false)} />}
           </div>
         )}
 
