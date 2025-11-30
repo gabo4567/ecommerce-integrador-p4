@@ -24,6 +24,7 @@ const {passwordResetMailer} = require("./src/http/passwordResetMailer");
 const {auditForwarder} = require("./src/http/auditForwarder");
 const {supportTicketNotifier} = require("./src/http/supportTicketNotifier");
 const {imageThumbs} = require("./src/storage/imageThumbs");
+const {webhookShipmentStatus} = require("./src/http/webhookShipmentStatus");
 
 exports.discountPublisher = discountPublisher;
 exports.orderAutoCancel = orderAutoCancel;
@@ -37,3 +38,4 @@ exports.changePasswordProxy = changePasswordProxy;
 exports.passwordResetMailer = passwordResetMailer;
 exports.auditForwarder = auditForwarder;
 exports.supportTicketNotifier = supportTicketNotifier;
+exports.webhookShipmentStatus = webhookShipmentStatus;

@@ -1,6 +1,6 @@
 from django.db import models
 from django.conf import settings
-from products.models import Product
+from products.models import Product, ProductVariant
 
 class Order(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
@@ -11,6 +11,7 @@ class Order(models.Model):
 class OrderItem(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='items')
     product = models.ForeignKey(Product, on_delete=models.PROTECT)
+    variant = models.ForeignKey(ProductVariant, on_delete=models.PROTECT, null=True, blank=True)
     quantity = models.PositiveIntegerField(default=1)
     unit_price = models.DecimalField(max_digits=12, decimal_places=2)
     active = models.BooleanField(default=True)
@@ -63,6 +64,9 @@ class OrderDiscount(models.Model):
     discount = models.ForeignKey(Discount, on_delete=models.PROTECT)
     applied_at = models.DateTimeField(auto_now_add=True)
 
+    class Meta:
+        unique_together = ('order', 'discount')
+
 
 # ---------------------------------------------
 # Envíos
@@ -79,6 +83,8 @@ class Shipment(models.Model):
 
     def __str__(self):
         return f"Shipment {self.tracking_number or 'N/A'} for order {self.order_id}"
+
+    # El disparo del webhook se mueve a ShipmentViewSet.perform_update
 
 
 # ---------------------------------------------

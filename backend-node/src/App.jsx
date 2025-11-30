@@ -19,7 +19,12 @@ import OrderDetails from "@/pages/OrderDetails";
 import AdminProducts from "@/pages/AdminProducts";
 import AdminProductForm from "@/pages/AdminProductForm";
 import AdminShipments from "@/pages/AdminShipments";
+import AdminOrders from "@/pages/AdminOrders";
+import AdminOrderDetails from "@/pages/AdminOrderDetails";
+import AdminUsers from "@/pages/AdminUsers";
+import AdminUserDetail from "@/pages/AdminUserDetail";
 import AdminSupport from "@/pages/AdminSupport";
+import RequireAdmin from "@/components/RequireAdmin";
 
 export default function App() {
   return (
@@ -39,12 +44,16 @@ export default function App() {
         <Route path="/cambiar-contrasena" element={<ChangePassword />} />
         <Route path="/soporte" element={<Support />} />
         <Route path="/ajustes" element={<SystemSettings />} />
-        <Route path="/admin/auditoria" element={<AdminAudit />} />
-        <Route path="/admin/productos" element={<AdminProducts />} />
-        <Route path="/admin/producto/nuevo" element={<AdminProductForm />} />
-        <Route path="/admin/producto/:id" element={<AdminProductForm />} />
-        <Route path="/admin/envios" element={<AdminShipments />} />
-        <Route path="/admin/soporte" element={<AdminSupport />} />
+        <Route path="/admin/auditoria" element={<RequireAdmin><AdminAudit /></RequireAdmin>} />
+        <Route path="/admin/productos" element={<RequireAdmin><AdminProducts /></RequireAdmin>} />
+        <Route path="/admin/producto/nuevo" element={<RequireAdmin><AdminProductForm /></RequireAdmin>} />
+        <Route path="/admin/producto/:id" element={<RequireAdmin><AdminProductForm /></RequireAdmin>} />
+        <Route path="/admin/envios" element={<RequireAdmin><AdminShipments /></RequireAdmin>} />
+        <Route path="/admin/soporte" element={<RequireAdmin><AdminSupport /></RequireAdmin>} />
+        <Route path="/admin/ordenes" element={<RequireAdmin><AdminOrders /></RequireAdmin>} />
+        <Route path="/admin/orden/:id" element={<RequireAdmin><AdminOrderDetails /></RequireAdmin>} />
+        <Route path="/admin/usuarios" element={<RequireAdmin><AdminUsers /></RequireAdmin>} />
+        <Route path="/admin/usuario/:id" element={<RequireAdmin><AdminUserDetail /></RequireAdmin>} />
         <Route path="/pedido/:id" element={<OrderDetails />} />
         <Route path="/categorias" element={<CategoryList />} />
       </Routes>
