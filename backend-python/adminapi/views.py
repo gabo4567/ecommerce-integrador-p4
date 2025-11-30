@@ -58,8 +58,10 @@ class AdminProductViewSet(viewsets.ModelViewSet):
         create_audit(self.request.user, 'admin_product_update', 'product', obj.id, 'Producto actualizado')
 
     def perform_destroy(self, instance):
-        create_audit(self.request.user, 'admin_product_delete', 'product', instance.id, 'Producto eliminado')
-        return super().perform_destroy(instance)
+        # Soft delete: marcar inactivo en lugar de borrar
+        instance.active = False
+        instance.save(update_fields=['active'])
+        create_audit(self.request.user, 'admin_product_delete', 'product', instance.id, 'Producto inactivado')
 
     @action(detail=False, methods=['get'])
     def mine(self, request):

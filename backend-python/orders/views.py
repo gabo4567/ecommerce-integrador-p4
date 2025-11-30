@@ -23,7 +23,9 @@ class OrderViewSet(viewsets.ModelViewSet):
         instance = self.get_object()
         if instance.status != 'pending':
             return Response({'detail': 'Solo se puede cancelar pedidos en estado pending'}, status=drf_status.HTTP_400_BAD_REQUEST)
-        return super().destroy(request, *args, **kwargs)
+        instance.status = 'cancelled'
+        instance.save(update_fields=['status'])
+        return Response(status=drf_status.HTTP_204_NO_CONTENT)
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
@@ -35,7 +37,7 @@ class OrderItemViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        qs = OrderItem.objects.filter(order__user=self.request.user)
+        qs = OrderItem.objects.filter(order__user=self.request.user, active=True)
         order_id = self.request.query_params.get('order')
         if order_id:
             qs = qs.filter(order_id=order_id)
@@ -54,11 +56,12 @@ class OrderItemViewSet(viewsets.ModelViewSet):
 
     def perform_destroy(self, instance):
         order = instance.order
-        instance.delete()
+        instance.active = False
+        instance.save(update_fields=['active'])
         self._update_order_total(order)
 
     def _update_order_total(self, order):
-        total = sum(item.quantity * item.unit_price for item in order.items.all())
+        total = sum(item.quantity * item.unit_price for item in order.items.filter(active=True))
         Order.objects.filter(pk=order.pk).update(total=total)
 
 class InvoiceViewSet(viewsets.ModelViewSet):
@@ -178,3 +181,18 @@ class OrderStatusHistoryViewSet(viewsets.ModelViewSet):
         if not self.request.user.is_staff:
             raise PermissionDenied("Solo staff puede registrar cambios manualmente.")
         serializer.save(changed_by=self.request.user)
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        instance.status = 'rejected'
+        instance.save(update_fields=['status'])
+        return Response(status=drf_status.HTTP_204_NO_CONTENT)
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        instance.status = 'cancelled'
+        instance.save(update_fields=['status'])
+        return Response(status=drf_status.HTTP_204_NO_CONTENT)
+    def perform_destroy(self, instance):
+        if not self.request.user.is_staff:
+            raise PermissionDenied("Solo staff puede eliminar descuentos.")
+        instance.active = False
+        instance.save(update_fields=['active'])

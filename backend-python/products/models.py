@@ -5,6 +5,7 @@ class Category(models.Model):
     name = models.CharField(max_length=120)
     description = models.TextField(blank=True, null=True)
     image_url = models.URLField(max_length=500, blank=True, null=True)
+    active = models.BooleanField(default=True)
 
     def __str__(self):
         return self.name
@@ -17,6 +18,7 @@ class Product(models.Model):
     category = models.ForeignKey(Category, on_delete=models.PROTECT, related_name='products')
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='created_products')
     created_at = models.DateTimeField(auto_now_add=True)
+    active = models.BooleanField(default=True)
 
     def __str__(self):
         return self.name
@@ -54,6 +56,7 @@ class ProductSpec(models.Model):
     unit = models.CharField(max_length=20, blank=True)
     display_order = models.IntegerField(default=0)
     searchable = models.BooleanField(default=True)
+    active = models.BooleanField(default=True)
 
     class Meta:
         unique_together = ('product', 'key')
@@ -76,6 +79,7 @@ class ProductImage(models.Model):
     is_primary = models.BooleanField(default=False)
     sort_order = models.IntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
+    active = models.BooleanField(default=True)
 
     class Meta:
         indexes = [

@@ -39,8 +39,13 @@ class SupportTicketViewSet(viewsets.ModelViewSet):
     def destroy(self, request, *args, **kwargs):
         ticket = self.get_object()
         if request.user.is_staff:
-            Audit.objects.create(user=request.user, action='support_ticket_deleted', details=f"Ticket {ticket.id} eliminado por staff")
-            return super().destroy(request, *args, **kwargs)
+            # Soft delete: cerrar ticket en lugar de borrar
+            if ticket.status != 'closed':
+                ticket.status = 'closed'
+                ticket.closed_at = timezone.now()
+                ticket.save(update_fields=['status', 'closed_at'])
+            Audit.objects.create(user=request.user, action='support_ticket_closed', details=f"Ticket {ticket.id} cerrado por staff")
+            return Response(status=status.HTTP_204_NO_CONTENT)
         if ticket.user_id != request.user.id:
             raise PermissionDenied("No puedes eliminar este ticket.")
         if ticket.status != 'closed':

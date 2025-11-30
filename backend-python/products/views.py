@@ -4,7 +4,7 @@ from .models import Product, Category, ProductVariant, ProductSpec, ProductImage
 from .serializers import ProductSerializer, CategorySerializer, ProductVariantSerializer, ProductSpecSerializer, ProductImageSerializer
 
 class CategoryViewSet(viewsets.ModelViewSet):
-    queryset = Category.objects.all()
+    queryset = Category.objects.filter(active=True)
     serializer_class = CategorySerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
@@ -21,10 +21,11 @@ class CategoryViewSet(viewsets.ModelViewSet):
     def perform_destroy(self, instance):
         if not self.request.user.is_staff:
             raise PermissionDenied("Solo staff puede eliminar categorías.")
-        instance.delete()
+        instance.active = False
+        instance.save(update_fields=['active'])
 
 class ProductViewSet(viewsets.ModelViewSet):
-    queryset = Product.objects.all()
+    queryset = Product.objects.filter(active=True)
     serializer_class = ProductSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
@@ -41,11 +42,12 @@ class ProductViewSet(viewsets.ModelViewSet):
     def perform_destroy(self, instance):
         if not self.request.user.is_staff:
             raise PermissionDenied("Solo staff puede eliminar productos.")
-        instance.delete()
+        instance.active = False
+        instance.save(update_fields=['active'])
 
 # VARIANTS
 class ProductVariantListCreateView(generics.ListCreateAPIView):
-    queryset = ProductVariant.objects.all()
+    queryset = ProductVariant.objects.filter(active=True)
     serializer_class = ProductVariantSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
@@ -67,7 +69,8 @@ class ProductVariantDetailView(generics.RetrieveUpdateDestroyAPIView):
     def perform_destroy(self, instance):
         if not self.request.user.is_staff:
             raise PermissionDenied("Solo staff puede eliminar variantes.")
-        instance.delete()
+        instance.active = False
+        instance.save(update_fields=['active'])
 
 # SPECS
 class ProductSpecListCreateView(generics.ListCreateAPIView):
@@ -76,9 +79,10 @@ class ProductSpecListCreateView(generics.ListCreateAPIView):
 
     def get_queryset(self):
         product_id = self.request.query_params.get('product')
+        qs = ProductSpec.objects.filter(active=True)
         if product_id:
-            return ProductSpec.objects.filter(product_id=product_id)
-        return ProductSpec.objects.all()
+            qs = qs.filter(product_id=product_id)
+        return qs
 
     def perform_create(self, serializer):
         if not self.request.user.is_staff:
@@ -98,7 +102,8 @@ class ProductSpecDetailView(generics.RetrieveUpdateDestroyAPIView):
     def perform_destroy(self, instance):
         if not self.request.user.is_staff:
             raise PermissionDenied("Solo staff puede eliminar especificaciones.")
-        instance.delete()
+        instance.active = False
+        instance.save(update_fields=['active'])
 
 # IMAGES
 class ProductImageListCreateView(generics.ListCreateAPIView):
@@ -107,9 +112,10 @@ class ProductImageListCreateView(generics.ListCreateAPIView):
 
     def get_queryset(self):
         product_id = self.request.query_params.get('product')
+        qs = ProductImage.objects.filter(active=True)
         if product_id:
-            return ProductImage.objects.filter(product_id=product_id)
-        return ProductImage.objects.all()
+            qs = qs.filter(product_id=product_id)
+        return qs
 
     def perform_create(self, serializer):
         if not self.request.user.is_staff:
@@ -127,4 +133,5 @@ class ProductImageDetailView(generics.RetrieveUpdateDestroyAPIView):
     def perform_destroy(self, instance):
         if not self.request.user.is_staff:
             raise PermissionDenied("Solo staff puede eliminar imágenes.")
-        instance.delete()
+        instance.active = False
+        instance.save(update_fields=['active'])

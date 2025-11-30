@@ -1,0 +1,23 @@
+{
+  "include": [
+    "backend-python"
+  ],
+  "venvPath": "backend-python",
+  "venv": "venv",
+  "executionEnvironments": [
+    {
+      "root": "backend-python",
+      "extraPaths": [
+        "backend-python",
+        "backend-python/venv/Lib/site-packages"
+      ]
+    }
+  ],
+  "typeCheckingMode": "basic",
+  "diagnosticRuleOverrides": {
+    "reportOptionalSubscript": "none",
+    "reportIndexIssue": "none",
+    "reportAttributeAccessIssue": "none",
+    "reportOptionalMemberAccess": "none"
+  }
+}

@@ -1,4 +1,6 @@
 from rest_framework import serializers
+from typing import Any, Dict, Optional, cast
+from typing import Any, Dict, Optional, cast
 from django.contrib.auth import get_user_model
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from django.contrib.auth.password_validation import validate_password
@@ -16,7 +18,7 @@ from .emails import (
     send_password_reset_confirmed_email,
 )
 
-User = get_user_model()
+User = cast(Any, get_user_model())
 
 class UserSerializer(serializers.ModelSerializer):
     role = serializers.SerializerMethodField()
@@ -62,23 +64,28 @@ class ChangePasswordSerializer(serializers.Serializer):
     new_password = serializers.CharField(write_only=True)
     confirm_password = serializers.CharField(write_only=True)
 
-    def validate(self, attrs):
+    def validate(self, attrs: Dict[str, Any]) -> Dict[str, Any]:
         user = self.context['request'].user
-        if not user.check_password(attrs['current_password']):
+        current_password = cast(str, attrs.get('current_password', ''))
+        new_password = cast(str, attrs.get('new_password', ''))
+        confirm_password = cast(str, attrs.get('confirm_password', ''))
+        if not user.check_password(current_password):
             raise serializers.ValidationError({'current_password': 'Contraseña actual incorrecta'})
-        if attrs['new_password'] != attrs['confirm_password']:
+        if new_password != confirm_password:
             raise serializers.ValidationError({'confirm_password': 'La confirmación no coincide'})
-        if attrs['current_password'] == attrs['new_password']:
+        if current_password == new_password:
             raise serializers.ValidationError({'new_password': 'La nueva contraseña no puede ser igual a la actual'})
         try:
-            validate_password(attrs['new_password'], user)
+            validate_password(new_password, user)
         except ValidationError as e:
-            raise serializers.ValidationError({'new_password': list(e.messages)})
+            msgs = [str(m) for m in getattr(e, 'messages', [str(e)])]
+            raise serializers.ValidationError({'new_password': msgs})
         return attrs
 
     def save(self, **kwargs):
         user = self.context['request'].user
-        new_password = self.validated_data['new_password']
+        vd = cast(Dict[str, Any], self.validated_data)
+        new_password = cast(str, vd.get('new_password', ''))
         user.set_password(new_password)
         user.save()
         # Email de notificación (HTML)
@@ -91,10 +98,11 @@ class ChangePasswordSerializer(serializers.Serializer):
 class PasswordResetRequestSerializer(serializers.Serializer):
     email = serializers.EmailField()
 
-    def validate(self, attrs):
+    def validate(self, attrs: Dict[str, Any]) -> Dict[str, Any]:
         User = get_user_model()
+        email = cast(str, attrs.get('email', ''))
         try:
-            user = User.objects.get(email__iexact=attrs['email'])
+            user = User.objects.get(email__iexact=email)
         except User.DoesNotExist:
             # No revelamos si existe o no (respuesta uniforme)
             attrs['user'] = None
@@ -103,7 +111,8 @@ class PasswordResetRequestSerializer(serializers.Serializer):
         return attrs
 
     def save(self, **kwargs):
-        user = self.validated_data.get('user')
+        vd = cast(Dict[str, Any], self.validated_data)
+        user = cast(Optional[Any], vd.get('user'))
         if not user:
             return None
         # Generar código simple de 6 dígitos alfanumérico
@@ -121,26 +130,30 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
     new_password = serializers.CharField(write_only=True)
     confirm_password = serializers.CharField(write_only=True)
 
-    def validate(self, attrs):
+    def validate(self, attrs: Dict[str, Any]) -> Dict[str, Any]:
         User = get_user_model()
+        email = cast(str, attrs.get('email', ''))
+        code = cast(str, attrs.get('code', ''))
         try:
-            user = User.objects.get(email__iexact=attrs['email'])
+            user = User.objects.get(email__iexact=email)
         except User.DoesNotExist:
             raise serializers.ValidationError({'email': 'Usuario no encontrado'})
 
         try:
-            prc = PasswordResetCode.objects.filter(user=user, code=attrs['code']).latest('created_at')
+            prc = PasswordResetCode.objects.filter(user=user, code=code).latest('created_at')
         except PasswordResetCode.DoesNotExist:
             raise serializers.ValidationError({'code': 'Código inválido'})
 
         if not prc.is_valid():
             raise serializers.ValidationError({'code': 'Código expirado o ya usado'})
 
-        if attrs['new_password'] != attrs['confirm_password']:
+        new_password = cast(str, attrs.get('new_password', ''))
+        confirm_password = cast(str, attrs.get('confirm_password', ''))
+        if new_password != confirm_password:
             raise serializers.ValidationError({'confirm_password': 'La confirmación no coincide'})
 
         try:
-            validate_password(attrs['new_password'], user)
+            validate_password(new_password, user)
         except ValidationError as e:
             raise serializers.ValidationError({'new_password': list(e.messages)})
 
@@ -149,9 +162,10 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
         return attrs
 
     def save(self, **kwargs):
-        user = self.validated_data['user']
-        prc = self.validated_data['prc']
-        new_password = self.validated_data['new_password']
+        vd = cast(Dict[str, Any], self.validated_data)
+        user = cast(Any, vd.get('user'))
+        prc = cast(PasswordResetCode, vd.get('prc'))
+        new_password = cast(str, vd.get('new_password', ''))
         user.set_password(new_password)
         user.save()
         prc.used = True

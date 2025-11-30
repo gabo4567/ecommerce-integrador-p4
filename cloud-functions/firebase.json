@@ -19,8 +19,11 @@
   ,
   "emulators": {
     "functions": { "port": 5001 },
-    "storage": { "port": 9199 }
+    "storage": { "port": 9199 },
+    "hub": { "host": "127.0.0.1", "port": 4401 },
+    "ui": { "enabled": true, "host": "127.0.0.1", "port": 4001 }
   },
+  "storage": { "rules": "storage.rules" },
   "hosting": {
     "public": "../backend-node/dist",
     "ignore": [

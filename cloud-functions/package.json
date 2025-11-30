@@ -1,0 +1,7 @@
+{
+  "name": "cloud-functions-root",
+  "private": true,
+  "scripts": {
+    "emulators": "firebase emulators:start --only functions,storage --config firebase.json --project proyectoprog4-fb1eb"
+  }
+}

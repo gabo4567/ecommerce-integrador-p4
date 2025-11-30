@@ -9,6 +9,18 @@ class OrderItemSerializer(serializers.ModelSerializer):
         model = OrderItem
         fields = '__all__'
 
+    def validate(self, attrs):
+        product = attrs.get('product') or getattr(self.instance, 'product', None)
+        quantity = attrs.get('quantity') or getattr(self.instance, 'quantity', None)
+        if product is not None and quantity is not None:
+            try:
+                stock = int(getattr(product, 'stock', 0))
+            except (TypeError, ValueError):
+                stock = 0
+            if stock >= 0 and int(quantity) > stock:
+                raise serializers.ValidationError({'quantity': 'stock_insuficiente'})
+        return attrs
+
 class OrderSerializer(serializers.ModelSerializer):
     items = OrderItemSerializer(many=True, read_only=True)
     class Meta:

@@ -3,14 +3,14 @@
   "description": "Cloud Functions for Firebase",
   "scripts": {
     "lint": "eslint -c .eslintrc.js .",
-    "serve": "firebase emulators:start --only functions,storage",
+    "serve": "firebase emulators:start --only functions,storage --config ../firebase.json --project proyectoprog4-fb1eb",
     "shell": "firebase functions:shell",
     "start": "npm run shell",
     "deploy": "firebase deploy --only functions",
     "logs": "firebase functions:log"
   },
   "engines": {
-    "node": "24"
+    "node": "22"
   },
   "main": "index.js",
   "dependencies": {
