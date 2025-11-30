@@ -184,8 +184,13 @@ class OrderDiscountViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         order = serializer.validated_data.get('order')
+        discount = serializer.validated_data.get('discount')
         if not self.request.user.is_staff and order.user != self.request.user:
             raise PermissionDenied("No puedes aplicar descuentos a pedidos de otro usuario.")
+        # Validación para evitar duplicados
+        from rest_framework.exceptions import ValidationError
+        if OrderDiscount.objects.filter(order=order, discount=discount).exists():
+            raise ValidationError("Este descuento ya fue aplicado a este pedido.")
         serializer.save()
 
 class OrderStatusHistoryViewSet(viewsets.ModelViewSet):

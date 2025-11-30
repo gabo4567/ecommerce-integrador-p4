@@ -352,48 +352,52 @@ const UserProfile: React.FC = () => {
                   </div>
                 </div>
                 <div className="space-y-4">
-                  {orders
-                    .slice()
-                    .sort((a, b) => ordersOrder === 'asc'
-                      ? new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-                      : new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-                    )
-                    .slice((ordersPage - 1) * ordersPerPage, ordersPage * ordersPerPage)
-                    .map((order) => (
-                      <div key={order.id} className="border border-gray-200 rounded-lg p-6">
-                        <div className="flex items-center justify-between mb-4">
-                          <div>
-                            <h3 className="font-semibold text-gray-800">Pedido #{order.id}</h3>
-                            <p className="text-sm text-gray-600">
-                              <Calendar className="inline h-4 w-4 mr-1" />
-                              {new Date(order.created_at).toLocaleDateString()}
-                            </p>
+                    {orders
+                      .filter(order => order.status !== 'closed' && (order.status !== 'pending' || (order.items && order.items.length > 0)))
+                      .slice()
+                      .sort((a, b) => ordersOrder === 'asc'
+                        ? new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+                        : new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+                      )
+                      .slice((ordersPage - 1) * ordersPerPage, ordersPage * ordersPerPage)
+                      .map((order) => (
+                        <div key={order.id} className="border border-gray-200 rounded-lg p-6">
+                          <div className="flex items-center justify-between mb-4">
+                            <div>
+                              <h3 className="font-semibold text-gray-800">Pedido #{order.id}</h3>
+                              <p className="text-sm text-gray-600">
+                                <Calendar className="inline h-4 w-4 mr-1" />
+                                {new Date(order.created_at).toLocaleDateString()}
+                              </p>
+                            </div>
+                            <div className="text-right">
+                              <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(order.status)}`}>
+                                {order.status === 'paid' ? 'Pagado' : order.status === 'pending' ? 'Pendiente' : order.status}
+                              </span>
+                              <p className="text-lg font-semibold text-gray-800 mt-1">
+                                ${Number(order.total).toFixed(2)}
+                              </p>
+                            </div>
                           </div>
-                          <div className="text-right">
-                            <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(order.status)}`}>
-                              {order.status === 'paid' ? 'Pagado' : order.status === 'pending' ? 'Pendiente' : order.status}
-                            </span>
-                            <p className="text-lg font-semibold text-gray-800 mt-1">
-                              ${Number(order.total).toFixed(2)}
-                            </p>
+                          <div className="flex items-center justify-between">
+                              <div className="text-sm text-gray-600">
+                                <Package className="inline h-4 w-4 mr-1" />
+                                {(order.items?.length ?? 0)} artículos
+                              </div>
+                              <div className="flex space-x-2">
+                                {order.status === 'pending' && order.items && order.items.length > 0 ? (
+                                  <Link to="/carrito" className="text-blue-600 hover:text-blue-800 text-sm font-medium">
+                                    Ir al Carrito
+                                  </Link>
+                                ) : (
+                                  <Link to={`/pedido/${order.id}`} className="text-blue-600 hover:text-blue-800 text-sm font-medium">
+                                    Ver Detalles
+                                  </Link>
+                                )}
+                              </div>
                           </div>
                         </div>
-                        <div className="flex items-center justify-between">
-                            <div className="text-sm text-gray-600">
-                              <Package className="inline h-4 w-4 mr-1" />
-                              {(order.items?.length ?? 0)} artículos
-                            </div>
-                            <div className="flex space-x-2">
-                            <Link to={`/pedido/${order.id}`} className="text-blue-600 hover:text-blue-800 text-sm font-medium">
-                              Ver Detalles
-                            </Link>
-                            <button className="text-blue-600 hover:text-blue-800 text-sm font-medium">
-                              Estado: {order.status}
-                            </button>
-                            </div>
-                        </div>
-                      </div>
-                    ))}
+                      ))}
                 </div>
               </div>
             )}

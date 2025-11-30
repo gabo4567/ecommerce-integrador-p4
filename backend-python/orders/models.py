@@ -63,6 +63,9 @@ class OrderDiscount(models.Model):
     discount = models.ForeignKey(Discount, on_delete=models.PROTECT)
     applied_at = models.DateTimeField(auto_now_add=True)
 
+    class Meta:
+        unique_together = ('order', 'discount')
+
 
 # ---------------------------------------------
 # Envíos

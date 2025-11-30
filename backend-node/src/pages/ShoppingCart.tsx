@@ -12,6 +12,36 @@ const ShoppingCart: React.FC = () => {
   const [promoCode, setPromoCode] = useState("");
   const [promoMessage, setPromoMessage] = useState<string | null>(null);
   const [appliedDiscounts, setAppliedDiscounts] = useState<any[]>([]);
+
+  // Nueva función para desaplicar descuento
+  const removeDiscount = async (discountId: number) => {
+    if (!orderId) return;
+    try {
+      await api.del(`order-discounts/${discountId}/`);
+      await fetchAppliedDiscounts();
+    } catch (e) {
+      setPromoMessage("No se pudo eliminar el descuento");
+    }
+  };
+
+  // Obtiene los descuentos aplicados con nombre
+  const fetchAppliedDiscounts = async () => {
+    if (!orderId) return;
+    try {
+      const ods = await api.get<any[]>(`order-discounts/?order=${orderId}`);
+      if (ods.length === 0) { setAppliedDiscounts([]); return; }
+      const discounts = await api.get<any[]>("discounts/");
+      const mapped = ods.map((od: any) => {
+        const d = discounts.find((x: any) => x.id === od.discount);
+        return {
+          ...od,
+          discountName: d ? d.name : `ID ${od.discount}`,
+          discountPercentage: d ? Number(d.percentage) : 0
+        };
+      });
+      setAppliedDiscounts(mapped);
+    } catch {}
+  };
   const access = useAuthStore((s) => s.accessToken);
   const refreshCart = useCartStore((s) => s.refreshCount);
   const navigate = useNavigate();
@@ -38,12 +68,11 @@ const ShoppingCart: React.FC = () => {
           };
         });
         setCartItems(mapped);
-        const ods = await api.get<any[]>(`order-discounts/?order=${pending.id}`);
-        setAppliedDiscounts(ods);
+        await fetchAppliedDiscounts();
       } catch {}
     };
     run();
-  }, [access]);
+  }, [access, orderId]);
 
   const updateQuantity = async (id: number, newQuantity: number) => {
     if (newQuantity < 1) return;
@@ -61,9 +90,12 @@ const ShoppingCart: React.FC = () => {
   };
 
   const subtotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  const discountAmount = appliedDiscounts
+    .map((od: any) => ((subtotal * (od.discountPercentage || 0)) / 100))
+    .reduce((a, b) => a + b, 0);
   const shipping = subtotal > 100 ? 0 : 15.99;
-  const tax = subtotal * 0.21;
-  const total = subtotal + shipping + tax;
+  const tax = (subtotal - discountAmount) * 0.21;
+  const total = subtotal - discountAmount + shipping + tax;
 
   const applyDiscount = async () => {
     setPromoMessage(null);
@@ -74,11 +106,9 @@ const ShoppingCart: React.FC = () => {
       const d = discounts.find((x: any) => String(x.name).toLowerCase() === promoCode.trim().toLowerCase() && x.active);
       if (!d) { setPromoMessage("Código no válido"); return; }
       await api.post("order-discounts/", { order: orderId, discount: d.id });
-      const ods = await api.get<any[]>(`order-discounts/?order=${orderId}`);
-      setAppliedDiscounts(ods);
-      setPromoMessage("Descuento aplicado");
+      await fetchAppliedDiscounts();
     } catch (e) {
-      setPromoMessage("No se pudo aplicar el descuento");
+      setPromoMessage("Descuento ya aplicado");
     }
   };
 
@@ -193,7 +223,19 @@ const ShoppingCart: React.FC = () => {
                   {appliedDiscounts.length > 0 && (
                     <div className="flex justify-between">
                       <span className="text-gray-600">Descuentos</span>
-                      <span className="font-medium text-green-700">{appliedDiscounts.map((od: any) => od.discount).length} aplicado(s)</span>
+                      <span className="font-medium text-green-700">
+                        -$
+                        {appliedDiscounts
+                          .map((od: any) => {
+                            // Si tienes el porcentaje en od.discount.percentage, úsalo. Si no, ajusta según tu estructura.
+                            const percentage = od.discount && od.discount.percentage
+                              ? Number(od.discount.percentage)
+                              : (od.discountPercentage || 0);
+                            return ((subtotal * percentage) / 100);
+                          })
+                          .reduce((a, b) => a + b, 0)
+                          .toFixed(2)}
+                      </span>
                     </div>
                   )}
                   <div className="flex justify-between">
@@ -258,7 +300,15 @@ const ShoppingCart: React.FC = () => {
                     <div className="font-medium">Descuentos aplicados:</div>
                     <ul className="list-disc list-inside">
                       {appliedDiscounts.map((od: any) => (
-                        <li key={od.id}>ID descuento: {od.discount}</li>
+                        <li key={od.id} className="flex items-center justify-between">
+                          <span>Descuento: {od.discountName}</span>
+                          <button
+                            className="ml-2 text-red-600 hover:text-red-800 text-xs px-2 py-1 rounded border border-red-200 bg-red-50"
+                            onClick={() => removeDiscount(od.id)}
+                          >
+                            Quitar
+                          </button>
+                        </li>
                       ))}
                     </ul>
                   </div>

@@ -52,6 +52,7 @@ const Checkout: React.FC = () => {
 
   const [orderItems, setOrderItems] = useState<any[]>([]);
   const [orderId, setOrderId] = useState<number | null>(null);
+  const [appliedDiscounts, setAppliedDiscounts] = useState<any[]>([]);
   const [message, setMessage] = useState<string | null>(null);
   const [invoiceNumber, setInvoiceNumber] = useState<string | null>(null);
   const [invoiceMessage, setInvoiceMessage] = useState<string | null>(null);
@@ -82,15 +83,31 @@ const Checkout: React.FC = () => {
           };
         });
         setOrderItems(mapped);
+        // Obtener descuentos aplicados
+        const ods = await api.get<any[]>(`order-discounts/?order=${pending.id}`);
+        if (ods.length === 0) { setAppliedDiscounts([]); return; }
+        const discounts = await api.get<any[]>("discounts/");
+        const mappedDiscounts = ods.map((od: any) => {
+          const d = discounts.find((x: any) => x.id === od.discount);
+          return {
+            ...od,
+            discountName: d ? d.name : `ID ${od.discount}`,
+            discountPercentage: d ? Number(d.percentage) : 0
+          };
+        });
+        setAppliedDiscounts(mappedDiscounts);
       } catch {}
     };
     run();
   }, [access]);
 
   const subtotal = orderItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-  const shipping = 15.99;
-  const tax = subtotal * 0.21;
-  const total = subtotal + shipping + tax;
+  const discountAmount = appliedDiscounts
+    .map((od: any) => ((subtotal * (od.discountPercentage || 0)) / 100))
+    .reduce((a, b) => a + b, 0);
+  const shipping = subtotal > 100 ? 0 : 15.99;
+  const tax = (subtotal - discountAmount) * 0.21;
+  const total = subtotal - discountAmount + shipping + tax;
 
   const placeOrder = async () => {
     setMessage(null);
@@ -142,7 +159,6 @@ const Checkout: React.FC = () => {
           subject: `Solicitud de envío para pedido ${orderId}`,
           message: `Compra confirmada. Generar envío. Dirección: ${fullAddress || 'Sin dirección'}, carrier: Feraytek Logistics, tracking sugerido: ${tracking}.`,
         });
-        setMessage(`Compra confirmada. Ticket #${ticket.id} creado para generar el tracking.`);
       } catch {
         setMessage("Compra confirmada. No se pudo crear el ticket de soporte para el envío.");
       }
@@ -474,14 +490,14 @@ const Checkout: React.FC = () => {
 
             {activeStep === 4 && (
               <div className="bg-white rounded-lg shadow-md p-6 text-center">
-                <h2 className="text-xl font-semibold text-gray-800 mb-2">Confirmación</h2>
-                <p className="text-gray-700">{message || 'Compra confirmada'}</p>
-                {trackingNumber && (
-                  <div className="mt-4 p-4 border border-green-300 bg-green-50 rounded-lg">
-                    <div className="text-green-700 font-semibold">Gracias por tu compra</div>
+                <div className="mt-4 p-4 border border-green-300 bg-green-50 rounded-lg">
+                  <div className="text-green-700 font-semibold">Gracias por tu compra</div>
+                  {trackingNumber ? (
                     <div className="mt-1 text-2xl font-bold text-green-800">Tracking: {trackingNumber}</div>
-                  </div>
-                )}
+                  ) : (
+                    <div className="mt-1 text-lg text-green-800">Pronto recibirás el código de seguimiento por email o en tu perfil.</div>
+                  )}
+                </div>
                 <div className="mt-6">
                   <button onClick={() => navigate('/')} className="bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700">Volver al inicio</button>
                 </div>
@@ -524,6 +540,14 @@ const Checkout: React.FC = () => {
                   <span className="text-gray-600">Subtotal</span>
                   <span>${subtotal.toFixed(2)}</span>
                 </div>
+                {appliedDiscounts.length > 0 && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Descuentos</span>
+                    <span className="font-medium text-green-700">-
+                      ${discountAmount.toFixed(2)}
+                    </span>
+                  </div>
+                )}
                 <div className="flex justify-between">
                   <span className="text-gray-600">Envío</span>
                   <span>${shipping.toFixed(2)}</span>
