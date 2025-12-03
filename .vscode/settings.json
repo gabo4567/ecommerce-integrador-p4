@@ -1,5 +1,5 @@
 {
-  "python.defaultInterpreterPath": "C:/Users/gabri/Documents/Proyectos/ecommerce-integrador-p4/backend-python/venv/Scripts/python.exe",
-  "python.envFile": "C:/Users/gabri/Documents/Proyectos/ecommerce-integrador-p4/backend-python/.env",
+  "python.defaultInterpreterPath": "C:/Users/gabri/Documents/Proyectos/ecommerce-integrador-p4/microservicio-ia/.venv/Scripts/python.exe",
+  "python.envFile": "C:/Users/gabri/Documents/Proyectos/ecommerce-integrador-p4/microservicio-ia/.env",
   "python-envs.pythonProjects": []
 }

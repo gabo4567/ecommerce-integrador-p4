@@ -5,7 +5,7 @@ const baseUrl = (import.meta.env?.VITE_API_BASE_URL) ?? "http://localhost:8000/a
 async function request(path, method = "GET", body) {
   const auth = useAuthStore.getState();
   const headers = { "Content-Type": "application/json" };
-  if (auth.accessToken) headers["Authorization"] = `Bearer ${auth.accessToken}`;
+  if (auth.accessToken && auth.refreshToken) headers["Authorization"] = `Bearer ${auth.accessToken}`;
   const res = await fetch(new URL(path, baseUrl).toString(), {
     method,
     headers,
@@ -25,6 +25,7 @@ async function request(path, method = "GET", body) {
     }
   }
   if (res.status === 401 && method === "GET") {
+    try { useAuthStore.getState().logout?.(); } catch {}
     return null;
   }
   if (!res.ok) throw new Error(await res.text());

@@ -3,7 +3,7 @@ import Layout from '../components/Layout';
 import { CreditCard, Truck, MapPin, User, Mail, Phone } from 'lucide-react';
 import { useNavigate } from "react-router-dom";
 import { api } from "../api/client";
-import { formatMoney, FREE_SHIPPING_THRESHOLD } from "../lib/utils";
+import { formatMoney, FREE_SHIPPING_THRESHOLD, getProductImageCandidates } from "../lib/utils";
 import { useAuthStore } from "../store/auth";
 import { useCartStore } from "../store/cart";
 
@@ -51,7 +51,7 @@ const Checkout = () => {
             name: p.name || `Producto ${it.product}`,
             price: Number(it.unit_price),
             quantity: it.quantity,
-            image: (p.images && p.images[0]?.url) || "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100'><rect width='100%' height='100%' fill='%23f3f4f6'/><circle cx='50' cy='50' r='30' fill='%23e5e7eb'/></svg>",
+            image: (getProductImageCandidates(p)[0]) || "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100'><rect width='100%' height='100%' fill='%23f3f4f6'/><circle cx='50' cy='50' r='30' fill='%23e5e7eb'/></svg>",
           };
         });
         setOrderItems(mapped);

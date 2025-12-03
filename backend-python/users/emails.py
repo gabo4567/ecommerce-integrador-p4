@@ -12,7 +12,7 @@ def display_name(user):
     return user.username or user.email or 'Usuario'
 
 
-def send_templated_email(to_email: str, subject: str, template_name: str, context: dict, fail_silently: bool = True):
+def send_templated_email(to_email: str, subject: str, template_name: str, context: dict, fail_silently: bool = False):
     html_content = render_to_string(template_name, context)
     text_content = strip_tags(html_content)
     msg = EmailMultiAlternatives(

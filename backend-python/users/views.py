@@ -12,8 +12,10 @@ from .serializers import (
 )
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.permissions import IsAuthenticated, AllowAny, IsAdminUser
 from .serializers import EmailTokenObtainPairSerializer
+from django.contrib.auth import get_user_model
+from django.conf import settings
 
 class UserRegisterView(generics.CreateAPIView):
     serializer_class = UserSerializer
@@ -67,7 +69,6 @@ class PasswordResetRequestView(APIView):
         serializer = PasswordResetRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        # Respuesta uniforme independientemente de si el email existe
         return Response({'detail': 'Si el email existe, se envió un código (expira en 2 minutos).'}, status=status.HTTP_200_OK)
 
 
@@ -103,3 +104,14 @@ class EmailLoginView(APIView):
             "username": user.username,
             "email": user.email,
         }, status=status.HTTP_200_OK)
+
+# Admin users endpoints
+class AdminUserListCreateView(generics.ListCreateAPIView):
+    queryset = get_user_model().objects.all()
+    serializer_class = AdminUserSerializer
+    permission_classes = [IsAdminUser]
+
+class AdminUserDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = get_user_model().objects.all()
+    serializer_class = AdminUserSerializer
+    permission_classes = [IsAdminUser]

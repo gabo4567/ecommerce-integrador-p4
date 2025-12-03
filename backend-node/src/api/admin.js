@@ -19,6 +19,10 @@ export const adminApi = {
   updateImage: (id, payload) => api.patch(`images/${id}/`, payload),
   deleteImage: (id) => api.del(`images/${id}/`),
 
+  listSpecs: (productId) => api.get(productId ? `specs/?product=${productId}` : "specs/"),
+  createSpec: (payload) => api.post("specs/", payload),
+  updateSpec: (id, payload) => api.patch(`specs/${id}/`, payload),
+
   listShipments: () => api.get("shipments/"),
   updateShipment: (id, payload) => api.patch(`shipments/${id}/`, payload),
   deleteShipment: (id) => api.del(`shipments/${id}/`),

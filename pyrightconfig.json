@@ -1,6 +1,7 @@
 {
   "include": [
-    "backend-python"
+    "backend-python",
+    "microservicio-ia"
   ],
   "venvPath": "backend-python",
   "venv": "venv",
@@ -10,6 +11,13 @@
       "extraPaths": [
         "backend-python",
         "backend-python/venv/Lib/site-packages"
+      ]
+    },
+    {
+      "root": "microservicio-ia",
+      "extraPaths": [
+        "microservicio-ia",
+        "microservicio-ia/.venv/Lib/site-packages"
       ]
     }
   ],

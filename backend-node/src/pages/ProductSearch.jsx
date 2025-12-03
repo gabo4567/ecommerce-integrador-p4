@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation, Link, useNavigate } from "react-router-dom";
 import Layout from '../components/Layout';
-import { Star, ShoppingCart, Heart, Filter, ChevronDown } from 'lucide-react';
+import { Star, ShoppingCart, Heart, Filter } from 'lucide-react';
 import { isFavorite, toggleFavorite, getRating, setRating, getProductImageCandidates, advanceImageFallback, norm, formatMoney, addGuestCartItem, displayProductName, getGuestItemQty } from "../lib/utils";
 import { api } from "../api/client";
 import { useAuthStore } from "../store/auth";
@@ -9,7 +9,6 @@ import { useCartStore } from "../store/cart";
 
 const ProductSearch = () => {
   const location = useLocation();
-  const [sortBy, setSortBy] = useState('relevance');
   const [priceRange, setPriceRange] = useState([0, 0]);
   const [selectedCategories, setSelectedCategories] = useState([]);
   const [showFilters, setShowFilters] = useState(false);
@@ -28,6 +27,20 @@ const ProductSearch = () => {
 
   let baseProducts = selectedCategories.length === 0 ? products : products.filter((p) => selectedCategories.includes(p.category?.name || p.category));
   const tokens = norm(query).split(/\s+/).filter(Boolean);
+  // Precio disponible según categoría seleccionada
+  const availablePrices = baseProducts.map(p => Number(p.price)).filter(n => !isNaN(n));
+  const availableMin = availablePrices.length ? Math.min(...availablePrices) : 0;
+  const availableMax = availablePrices.length ? Math.max(...availablePrices) : 0;
+  const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+  const onMinChange = (v) => {
+    const val = clamp(Math.round(Number(v) || 0), availableMin, priceRange[1]);
+    setPriceRange([val, priceRange[1]]);
+  };
+  const onMaxChange = (v) => {
+    const val = clamp(Math.round(Number(v) || 0), priceRange[0], availableMax);
+    setPriceRange([priceRange[0], val]);
+  };
+
   let filteredProducts = baseProducts.filter((p) => {
     if (!tokens.length) return true;
     const hay = `${norm(p.name)} ${norm(p.description || '')} ${norm(p.category?.name || p.category || '')}`;
@@ -41,17 +54,7 @@ const ProductSearch = () => {
   if (priceRange[1] > 0) {
     filteredProducts = filteredProducts.filter((p) => Number(p.price) >= priceRange[0] && Number(p.price) <= priceRange[1]);
   }
-  if (sortBy === "price-low") {
-    filteredProducts = filteredProducts.slice().sort((a, b) => Number(a.price) - Number(b.price));
-  } else if (sortBy === "price-high") {
-    filteredProducts = filteredProducts.slice().sort((a, b) => Number(b.price) - Number(a.price));
-  } else if (sortBy === "newest") {
-    filteredProducts = filteredProducts.slice().sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-  } else if (sortBy === "rating") {
-    filteredProducts = filteredProducts.slice().sort((a, b) => getRating(b.id) - getRating(a.id));
-  } else {
-    filteredProducts = filteredProducts.slice().sort((a, b) => (b.__score || 0) - (a.__score || 0));
-  }
+  filteredProducts = filteredProducts.slice().sort((a, b) => (b.__score || 0) - (a.__score || 0));
 
   useEffect(() => {
     const run = async () => {
@@ -94,9 +97,9 @@ const ProductSearch = () => {
     const params = new URLSearchParams(location.search);
     const categoria = params.get("categoria");
     const buscar = params.get("buscar");
-    if (categoria && products.length > 0) setSelectedCategories([categoria]);
+    setSelectedCategories(categoria ? [categoria] : []);
     if (buscar) setQuery(buscar);
-  }, [location.search, products]);
+  }, [location.search]);
 
   const addToCart = async (p) => {
     try {
@@ -125,28 +128,28 @@ const ProductSearch = () => {
     setSelectedCategories(prev => prev.includes(category) ? prev.filter(c => c !== category) : [...prev, category]);
   };
 
+  useEffect(() => {
+    const prices = availablePrices;
+    const min = prices.length ? Math.min(...prices) : 0;
+    const max = prices.length ? Math.max(...prices) : 0;
+    setPriceRange(([curMin, curMax]) => [
+      Math.max(min, Math.min(curMin, max)),
+      Math.min(max, Math.max(curMax, min))
+    ]);
+  }, [selectedCategories, products]);
+
   return (
     <Layout>
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-800 mb-4">Buscar Productos</h1>
         <div className="relative mb-6">
           <input type="text" placeholder="Buscar productos..." value={query} onChange={(e) => setQuery(e.target.value)} className="w-full pl-4 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
-          <button className="absolute right-3 top-2.5 bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700" onClick={() => setQuery(query)}>Buscar</button>
+          <button className="absolute right-3 top-1/2 -translate-y-1/2 bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700" onClick={() => setQuery(query)}>Buscar</button>
         </div>
         <div className="flex items-center justify-between mb-6">
           <p className="text-gray-600">Mostrando <span className="font-semibold">{filteredProducts.length}</span> resultados</p>
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center">
             <button onClick={() => setShowFilters(!showFilters)} className="flex items-center space-x-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"><Filter className="h-4 w-4" /><span>Filtros</span></button>
-            <div className="relative">
-              <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} className="appearance-none bg-white border border-gray-300 rounded-lg px-4 py-2 pr-8 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                <option value="relevance">Relevancia</option>
-                <option value="price-low">Precio: Menor a Mayor</option>
-                <option value="price-high">Precio: Mayor a Menor</option>
-                <option value="rating">Mejor Valorados</option>
-                <option value="newest">Más Recientes</option>
-              </select>
-              <ChevronDown className="absolute right-2 top-3 h-4 w-4 pointer-events-none" />
-            </div>
           </div>
         </div>
       </div>
@@ -160,7 +163,27 @@ const ProductSearch = () => {
                 <label key={category} className="flex items-center mb-2"><input type="checkbox" checked={selectedCategories.includes(category)} onChange={() => toggleCategory(category)} className="rounded border-gray-300 text-blue-600 focus:ring-blue-500" /><span className="ml-2 text-sm text-gray-600">{category}</span></label>
               ))}
             </div>
-            <div className="mb-6"><h4 className="font-medium text-gray-700 mb-3">Precio</h4><div className="space-y-3"><input type="range" min={priceRange[0]} max={priceRange[1]} value={priceRange[1]} onChange={(e) => setPriceRange([priceRange[0], parseInt(e.target.value)])} className="w-full" /><div className="flex justify-between text-sm text-gray-600"><span>${priceRange[0]}</span><span>${priceRange[1]}</span></div></div></div>
+            <div className="mb-6">
+              <h4 className="font-medium text-gray-700 mb-3">Precio</h4>
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 text-sm text-gray-600">
+                  <span>${formatMoney(priceRange[0])}</span>
+                  <input className="w-24 border rounded px-2 py-1" inputMode="numeric" value={priceRange[0]} onChange={(e) => onMinChange(e.target.value)} />
+                </div>
+                <div>
+                  <label className="text-xs text-gray-600">Mínimo</label>
+                  <input type="range" min={availableMin} max={availableMax} step={1} value={priceRange[0]} onChange={(e) => onMinChange(e.target.value)} className="w-full" />
+                </div>
+                <div className="flex items-center gap-2 text-sm text-gray-600">
+                  <span>${formatMoney(priceRange[1])}</span>
+                  <input className="w-24 border rounded px-2 py-1" inputMode="numeric" value={priceRange[1]} onChange={(e) => onMaxChange(e.target.value)} />
+                </div>
+                <div>
+                  <label className="text-xs text-gray-600">Máximo</label>
+                  <input type="range" min={availableMin} max={availableMax} step={1} value={priceRange[1]} onChange={(e) => onMaxChange(e.target.value)} className="w-full" />
+                </div>
+              </div>
+            </div>
             <button className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700">Aplicar Filtros</button>
           </div>
         )}
@@ -180,15 +203,15 @@ const ProductSearch = () => {
                   {slice.map((product) => (
                     <Link to={`/producto/${product.id}`} key={product.id} className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow">
                       <div className="relative">
-                        <img src={getProductImageCandidates(product)[0]} data-candidates={JSON.stringify(getProductImageCandidates(product))} data-idx={0} onError={advanceImageFallback} alt={product.name} className="w-full h-48 object-contain rounded-t-lg bg-white" />
+                        <img src={getProductImageCandidates(product)[0]} data-candidates={JSON.stringify(getProductImageCandidates(product))} data-idx={0} onError={advanceImageFallback} alt={product.name} className="w-full h-48 object-contain rounded-t-lg bg-white" referrerPolicy="no-referrer" />
                         {role !== 'admin' && (
-                          <button className="absolute top-2 right-2 p-2 bg-white rounded-full shadow-md hover:bg-gray-50" onClick={e => { e.preventDefault(); e.stopPropagation(); if (!access) { navigate('/login'); return; } const wasFav = isFavorite(product.id); toggleFavorite(product.id); setFavMessage({ id: product.id, text: wasFav ? 'Quitado de favoritos' : 'Agregado a favoritos', variant: wasFav ? 'red' : 'green' }); setTimeout(() => setFavMessage({ id: null, text: '', variant: 'green' }), 1500); }}><Heart className={`h-5 w-5 ${(access && isFavorite(product.id)) ? 'text-red-500' : 'text-gray-400'}`} /></button>
+                          <button className="absolute top-2 right-2 p-2 bg-white rounded-full shadow-md hover:bg-gray-50" onClick={e => { e.preventDefault(); e.stopPropagation(); if (!access) { navigate('/login'); return; } const wasFav = isFavorite(product.id); toggleFavorite(product.id); setFavMessage({ id: product.id, text: wasFav ? 'Quitado de favoritos' : 'Agregado a favoritos', variant: wasFav ? 'red' : 'green' }); setTimeout(() => setFavMessage({ id: null, text: '', variant: 'green' }), 1500); }} aria-label={isFavorite(product.id) ? 'Quitar de favoritos' : 'Agregar a favoritos'} title={isFavorite(product.id) ? 'Quitar de favoritos' : 'Agregar a favoritos'}><Heart className={`h-5 w-5 ${(access && isFavorite(product.id)) ? 'text-red-500' : 'text-gray-400'}`} /></button>
                         )}
                       </div>
                       <div className="p-4">
                         <h3 className="font-semibold text-gray-800 mb-2 line-clamp-2">{displayProductName(product)}</h3>
                         <div className="flex items-center mb-3"><div className="flex items-center">{[...Array(5)].map((_, i) => (<Star key={i} onClick={e => { e.preventDefault(); e.stopPropagation(); if (purchasedIds.includes(product.id)) setRating(product.id, i+1); }} className={`h-4 w-4 ${i < getRating(product.id) ? 'text-yellow-400' : 'text-gray-300'} ${purchasedIds.includes(product.id) ? 'cursor-pointer' : 'opacity-50 cursor-not-allowed'}`} aria-label={purchasedIds.includes(product.id) ? 'Calificar' : 'Califica después de comprar y recibir'} />))}</div><span className="text-sm text-gray-500 ml-1">({getRating(product.id)})</span></div>
-                        <div className="flex items-center justify-between"><span className="text-lg font-bold text-gray-900">${formatMoney(product.price)}</span>{role !== 'admin' && (<button onClick={e => { e.preventDefault(); e.stopPropagation(); const disabled = (Number(product.stock ?? 0) <= 0 || (!access && getGuestItemQty(product.id) >= Number(product.stock ?? 0))); if (disabled) return; addToCart(product); }} className={`ml-auto p-2 rounded-lg transition-colors ${(Number(product.stock ?? 0) <= 0 || (!access && getGuestItemQty(product.id) >= Number(product.stock ?? 0))) ? 'bg-gray-300 text-gray-600 cursor-not-allowed' : 'bg-blue-600 text-white hover:bg-blue-700'}`} disabled={Number(product.stock ?? 0) <= 0 || (!access && getGuestItemQty(product.id) >= Number(product.stock ?? 0))}><ShoppingCart className="h-5 w-5" /></button>)}
+                        <div className="flex items-center justify_between"><span className="text-lg font-bold text-gray-900">${formatMoney(product.price)}</span>{role !== 'admin' && (<button onClick={e => { e.preventDefault(); e.stopPropagation(); const disabled = (Number(product.stock ?? 0) <= 0 || (!access && getGuestItemQty(product.id) >= Number(product.stock ?? 0))); if (disabled) return; addToCart(product); }} className={`ml-auto p-2 rounded-lg transition-colors ${(Number(product.stock ?? 0) <= 0 || (!access && getGuestItemQty(product.id) >= Number(product.stock ?? 0))) ? 'bg-gray-300 text-gray-600 cursor-not-allowed' : 'bg-blue-600 text-white hover:bg-blue-700'}`} disabled={Number(product.stock ?? 0) <= 0 || (!access && getGuestItemQty(product.id) >= Number(product.stock ?? 0))} aria-label="Agregar al carrito" title="Agregar al carrito"><ShoppingCart className="h-5 w-5" /></button>)}
                         </div>
                         {favMessage.id === product.id && (<div className={`mt-2 text-xs ${favMessage.variant === 'red' ? 'text-red-600' : 'text-green-600'}`}>{favMessage.text}</div>)}
                         {cartMessage.id === product.id && (<div className={`mt-2 text-xs ${cartMessage.variant === 'red' ? 'text-red-600' : 'text-green-600'}`}>{cartMessage.text}</div>)}
@@ -206,4 +229,3 @@ const ProductSearch = () => {
 };
 
 export default ProductSearch;
-

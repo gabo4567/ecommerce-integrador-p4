@@ -18,10 +18,10 @@
   ]
   ,
   "emulators": {
-    "functions": { "port": 5001 },
-    "storage": { "port": 9199 },
-    "hub": { "host": "127.0.0.1", "port": 4401 },
-    "ui": { "enabled": true, "host": "127.0.0.1", "port": 4001 }
+    "functions": { "host": "127.0.0.1", "port": 5003 },
+    "storage": { "host": "127.0.0.1", "port": 9399 },
+    "hub": { "host": "127.0.0.1", "port": 4407 },
+    "ui": { "enabled": true, "host": "127.0.0.1", "port": 4007 }
   },
   "storage": { "rules": "storage.rules" },
   "hosting": {

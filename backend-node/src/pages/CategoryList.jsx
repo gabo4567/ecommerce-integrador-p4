@@ -32,6 +32,7 @@ const CategoryList = () => {
                   onError={advanceImageFallback}
                   alt={cat.name}
                   className="w-20 h-20 object-contain rounded-full border"
+                  referrerPolicy="no-referrer"
                 />
               </div>
               <h2 className="text-2xl font-semibold mb-2">{cat.name}</h2>

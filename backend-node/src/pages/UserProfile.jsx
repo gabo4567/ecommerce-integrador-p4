@@ -253,7 +253,7 @@ export default function UserProfile() {
                   {favorites.map((item) => (
                     <Link to={`/producto/${item.id}`} key={item.id} className="border border-gray-200 rounded-lg p-4 block hover:shadow">
                       <div className="flex items-center space-x-4">
-                        <img src={getProductImageCandidates(item)[0]} data-candidates={JSON.stringify(getProductImageCandidates(item))} data-idx={0} onError={advanceImageFallback} alt={displayProductName(item)} className="w-20 h-20 object-cover rounded-lg" />
+                        <img src={getProductImageCandidates(item)[0]} data-candidates={JSON.stringify(getProductImageCandidates(item))} data-idx={0} onError={advanceImageFallback} alt={displayProductName(item)} className="w-20 h-20 object-cover rounded-lg" referrerPolicy="no-referrer" />
                         <div className="flex-1">
                           <h3 className="font-semibold text-gray-800 mb-1">{displayProductName(item)}</h3>
                           <div className="flex items-center space-x-2">

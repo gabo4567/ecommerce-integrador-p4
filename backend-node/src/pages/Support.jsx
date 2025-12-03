@@ -3,6 +3,7 @@ import Layout from "../components/Layout";
 import { statusLabel } from "../lib/utils";
 import { api } from "../api/client";
 import { useAuthStore } from "../store/auth";
+import { useLocation } from "react-router-dom";
 
 const Support = () => {
   const [tickets, setTickets] = useState([]);
@@ -15,6 +16,7 @@ const Support = () => {
   const [reply, setReply] = useState("");
   const [lastMsg, setLastMsg] = useState({});
   const access = useAuthStore((s) => s.accessToken);
+  const location = useLocation();
 
   useEffect(() => {
     const run = async () => {
@@ -32,6 +34,13 @@ const Support = () => {
     };
     run();
   }, [access]);
+
+  useEffect(() => {
+    const s = location.state || {};
+    if (typeof s.subject === 'string') setSubject(s.subject);
+    if (typeof s.message === 'string') setMessage(s.message);
+    if (typeof s.orderId === 'number') setOrderId(s.orderId);
+  }, [location.state]);
 
   const createTicket = async (e) => {
     e.preventDefault();

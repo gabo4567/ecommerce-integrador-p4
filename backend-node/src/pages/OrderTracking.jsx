@@ -4,6 +4,7 @@ import { Package, Truck, CheckCircle, Clock, MapPin, Calendar, Search, ArrowRigh
 import { api } from "../api/client";
 import { statusLabel, norm, formatMoney } from "../lib/utils";
 import { useAuthStore } from "../store/auth";
+import { useNavigate } from "react-router-dom";
 
 const OrderTracking = () => {
   const [trackingNumber, setTrackingNumber] = useState('');
@@ -14,6 +15,7 @@ const OrderTracking = () => {
   const [hasSearched, setHasSearched] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showLoading, setShowLoading] = useState(false);
+  const navigate = useNavigate();
 
   React.useEffect(() => {
     let t;
@@ -44,6 +46,13 @@ const OrderTracking = () => {
 
   const getStatusIcon = (completed) => { if (completed) return <CheckCircle className="h-6 w-6 text-green-500" />; return <Clock className="h-6 w-6 text-gray-400" />; };
   const getStatusColor = (status) => { switch (norm(status)) { case 'delivered': return 'bg-green-100 text-green-800'; case 'shipped': return 'bg-blue-100 text-blue-800'; case 'preparing': return 'bg-yellow-100 text-yellow-800'; case 'cancelled': return 'bg-red-100 text-red-800'; default: return 'bg-gray-100 text-gray-800'; } };
+
+  const onContactSupport = () => {
+    if (!orderData) return;
+    const preSubject = `Seguimiento pedido #${orderData.orderNumber}`;
+    const preMessage = `Consulta sobre envío ${orderData.trackingNumber} (estado: ${statusLabel(orderData.status)})`;
+    navigate('/soporte', { state: { subject: preSubject, message: preMessage, orderId: Number(orderData.orderNumber) } });
+  };
 
   return (
     <Layout>
@@ -100,7 +109,7 @@ const OrderTracking = () => {
             </div>
 
             <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4">
-              <button className="flex-1 bg-blue-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-blue-700">Contactar Soporte</button>
+              <button onClick={onContactSupport} className="flex-1 bg-blue-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-blue-700">Contactar Soporte</button>
               <button className="flex-1 border border-gray-300 text-gray-700 py-3 px-6 rounded-lg font-semibold hover:bg-gray-50">Imprimir Detalles</button>
               <button className="flex-1 border border-gray-300 text-gray-700 py-3 px-6 rounded-lg font-semibold hover:bg-gray-50">Compartir Seguimiento</button>
             </div>

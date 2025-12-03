@@ -33,7 +33,7 @@ export default function AdminShipments() {
       <div className="grid gap-3">
         {items.map(s => (
           <div key={s.id} className="p-4 bg-white border rounded">
-            <div className="flex items_center justify_between"><div><p className="font-medium">Shipment #{s.id} • Pedido #{s.order}</p><p className="text-sm text-gray-600">{s.carrier} • {s.tracking_number ?? 'sin tracking'}</p><p className="text-sm">{s.address}</p></div><div className="flex items_center gap-2"><span className="text-sm">Estado:</span><select className="border rounded px-2 py-1" value={s.status} onChange={e => setPendingChange({ item: s, status: e.target.value })}>{statuses.map(st => <option key={st.value} value={st.value}>{st.label}</option>)}</select></div></div>
+            <div className="flex items-center justify-between"><div><p className="font-medium">Shipment #{s.id} • Pedido #{s.order}</p><p className="text-sm text-gray-600">{s.carrier} • {s.tracking_number ?? 'sin tracking'}</p><p className="text-sm">{s.address}</p></div><div className="flex items-center gap-2"><span className="text-sm">Estado:</span><select className="border rounded px-2 py-1" value={s.status} onChange={e => setPendingChange({ item: s, status: e.target.value })}>{statuses.map(st => <option key={st.value} value={st.value}>{st.label}</option>)}</select></div></div>
           </div>
         ))}
         {items.length === 0 && !loading && <p>No hay envíos.</p>}

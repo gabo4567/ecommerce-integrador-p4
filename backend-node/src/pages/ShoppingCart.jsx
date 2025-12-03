@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import Layout from '../components/Layout';
 import { Trash2, Plus, Minus, ShoppingBag, ArrowRight } from 'lucide-react';
 import { api } from "../api/client";
-import { formatMoney, FREE_SHIPPING_THRESHOLD, getGuestCart, removeGuestCartItem, updateGuestCartItem } from "../lib/utils";
+import { formatMoney, FREE_SHIPPING_THRESHOLD, getGuestCart, removeGuestCartItem, updateGuestCartItem, getProductImageCandidates } from "../lib/utils";
 import { useAuthStore } from "../store/auth";
 import { useCartStore } from "../store/cart";
 import { useNavigate } from "react-router-dom";
@@ -28,7 +28,7 @@ const ShoppingCart = () => {
           const products = await api.get("products/");
           const mapped = items.map((it) => {
             const p = products.find((x) => x.id === it.id) || {};
-            return { id: it.id, productId: it.id, name: p.name || `Producto ${it.id}`, price: Number(it.price), quantity: it.quantity, image: (p.images && p.images[0]?.url) || "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100'><rect width='100%' height='100%' fill='%23f3f4f6'/><circle cx='50' cy='50' r='30' fill='%23e5e7eb'/></svg>", stock: typeof p.stock === 'number' ? Number(p.stock) : 999999 };
+            return { id: it.id, productId: it.id, name: p.name || `Producto ${it.id}`, price: Number(it.price), quantity: it.quantity, image: (getProductImageCandidates(p)[0]) || "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100'><rect width='100%' height='100%' fill='%23f3f4f6'/><circle cx='50' cy='50' r='30' fill='%23e5e7eb'/></svg>", stock: typeof p.stock === 'number' ? Number(p.stock) : 999999 };
           });
           setCartItems(mapped);
         } catch {}
@@ -43,7 +43,7 @@ const ShoppingCart = () => {
         setOrderId(pending.id);
         const items = await api.get(`order-items/?order=${pending.id}`);
         const products = await api.get("products/");
-        const mapped = items.map((it) => { const p = products.find((x) => x.id === it.product) || {}; return { id: it.id, productId: it.product, name: p.name || `Producto ${it.product}`, price: Number(it.unit_price), quantity: it.quantity, image: (p.images && p.images[0]?.url) || "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100'><rect width='100%' height='100%' fill='%23f3f4f6'/><circle cx='50' cy='50' r='30' fill='%23e5e7eb'/></svg>", stock: typeof p.stock === 'number' ? Number(p.stock) : 999999 };
+        const mapped = items.map((it) => { const p = products.find((x) => x.id === it.product) || {}; return { id: it.id, productId: it.product, name: p.name || `Producto ${it.product}`, price: Number(it.unit_price), quantity: it.quantity, image: (getProductImageCandidates(p)[0]) || "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100'><rect width='100%' height='100%' fill='%23f3f4f6'/><circle cx='50' cy='50' r='30' fill='%23e5e7eb'/></svg>", stock: typeof p.stock === 'number' ? Number(p.stock) : 999999 };
         });
         setCartItems(mapped);
         const ods = await api.get(`order-discounts/?order=${pending.id}`);
