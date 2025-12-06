@@ -147,8 +147,6 @@ git commit -m "Mensaje claro: ej. Added login endpoint"
 git push origin main
 ```
 
-Coordinar diariamente qué carpeta o microservicio tocará cada integrante para evitar conflictos.
-
 Cada integrante puede agregar README específicos en subcarpetas (backend-python/README.md, backend-node/README.md) si lo considera útil.
 
 ---
