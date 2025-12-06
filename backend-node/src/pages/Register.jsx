@@ -3,6 +3,7 @@ import Layout from '../components/Layout';
 import { Link, useNavigate } from 'react-router-dom';
 import { Mail, Lock, User, Eye, EyeOff, Phone, MapPin } from 'lucide-react';
 import { api } from "../api/client";
+import { functionsApi } from "../api/functions";
 
 const Register = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -16,7 +17,17 @@ const Register = () => {
     setError(null);
     if (formData.password !== formData.confirmPassword) { setError("Las contraseñas no coinciden"); return; }
     const username = formData.email;
-    try { await api.post("register/", { username, email: formData.email, password: formData.password, first_name: formData.firstName, last_name: formData.lastName, phone: formData.phone, address: formData.address }); navigate("/login"); }
+    try {
+      const payload = { username, email: formData.email, password: formData.password, first_name: formData.firstName, last_name: formData.lastName, phone: formData.phone, address: formData.address };
+      const useFunctions = String((import.meta).env?.VITE_USE_FUNCTIONS_AUTH || "").trim() === "1";
+      if (useFunctions) {
+        try { await functionsApi.post("userRegisterProxy", payload); }
+        catch { await api.post("register/", payload); }
+      } else {
+        await api.post("register/", payload);
+      }
+      navigate("/login");
+    }
     catch (err) { setError("No se pudo registrar"); }
   };
 

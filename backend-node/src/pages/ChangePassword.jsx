@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import Layout from "../components/Layout";
 import { api } from "../api/client";
+import { functionsApi } from "../api/functions";
 
 const ChangePassword = () => {
   const [currentPassword, setCurrentPassword] = useState("");
@@ -11,7 +12,17 @@ const ChangePassword = () => {
   const submit = async (e) => {
     e.preventDefault();
     setMessage(null);
-    try { await api.post("users/change-password/", { current_password: currentPassword, new_password: newPassword, confirm_password: confirmPassword }); setMessage("Contraseña actualizada correctamente"); }
+    try {
+      const payload = { old_password: currentPassword, new_password: newPassword };
+      const useFunctions = String((import.meta).env?.VITE_USE_FUNCTIONS_AUTH || "").trim() === "1";
+      if (useFunctions) {
+        try { await functionsApi.post("changePasswordProxy", payload); }
+        catch { await api.post("users/change-password/", { current_password: currentPassword, new_password: newPassword, confirm_password: confirmPassword }); }
+      } else {
+        await api.post("users/change-password/", { current_password: currentPassword, new_password: newPassword, confirm_password: confirmPassword });
+      }
+      setMessage("Contraseña actualizada correctamente");
+    }
     catch { setMessage("No se pudo cambiar la contraseña"); }
   };
 

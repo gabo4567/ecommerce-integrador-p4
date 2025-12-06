@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { api } from "../api/client";
+import { functionsApi } from "../api/functions";
 import { getGuestCart } from "../lib/utils";
 import { useCartStore } from "./cart";
 
@@ -41,11 +42,32 @@ export const useAuthStore = create((set) => ({
     try {
       const base = (import.meta).env?.VITE_API_BASE_URL ?? "http://localhost:8000/api/";
       const isEmail = typeof identifier === "string" && identifier.includes("@");
-      const url = new URL(isEmail ? "token/by-email/" : "token/", base).toString();
       const body = isEmail ? { email: identifier, password } : { username: identifier, password };
-      const res = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
-      if (!res.ok) return false;
-      const data = await res.json();
+      const useFunctions = String((import.meta).env?.VITE_USE_FUNCTIONS_AUTH || "").trim() === "1";
+      let data;
+      if (useFunctions) {
+        try { data = await functionsApi.post("authProxyLogin", body); }
+        catch { data = null; }
+      }
+      if (!data) {
+        if (isEmail) {
+          const urlEmail = new URL("token/by-email/", base).toString();
+          const resEmail = await fetch(urlEmail, { method: "POST", headers: { "Content-Type": "application/json", "Accept": "application/json" }, body: JSON.stringify({ email: identifier, password }) });
+          if (resEmail.ok) {
+            data = await resEmail.json();
+          } else {
+            const urlUser = new URL("token/", base).toString();
+            const resUser = await fetch(urlUser, { method: "POST", headers: { "Content-Type": "application/json", "Accept": "application/json" }, body: JSON.stringify({ username: identifier, password }) });
+            if (!resUser.ok) return false;
+            data = await resUser.json();
+          }
+        } else {
+          const urlUser = new URL("token/", base).toString();
+          const resUser = await fetch(urlUser, { method: "POST", headers: { "Content-Type": "application/json", "Accept": "application/json" }, body: JSON.stringify({ username: identifier, password }) });
+          if (!resUser.ok) return false;
+          data = await resUser.json();
+        }
+      }
       const username = data?.username ?? (isEmail ? identifier : identifier);
       if (typeof window !== "undefined") {
         localStorage.setItem("accessToken", data.access);

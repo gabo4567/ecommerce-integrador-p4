@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import Layout from "../components/Layout";
 import { useNavigate } from "react-router-dom";
 import { api } from "../api/client";
+import { functionsApi } from "../api/functions";
 
 const PasswordResetRequest = () => {
   const [email, setEmail] = useState("");
@@ -17,7 +18,16 @@ const PasswordResetRequest = () => {
   const submit = async (e) => {
     e.preventDefault();
     setMessage(null); setConfirmMessage(null); setLoading(true); setShowConfirm(false);
-    try { await api.post("users/password-reset/request/", { email }); setMessage("Si el email existe, se envió un código."); setShowConfirm(true); }
+    try {
+      const useFunctions = String((import.meta).env?.VITE_USE_FUNCTIONS_AUTH || "").trim() === "1";
+      if (useFunctions) {
+        try { await functionsApi.post("passwordResetMailer", { email }); }
+        catch { await api.post("users/password-reset/request/", { email }); }
+      } else {
+        await api.post("users/password-reset/request/", { email });
+      }
+      setMessage("Si el email existe, se envió un código."); setShowConfirm(true);
+    }
     catch { setMessage("Intenta nuevamente más tarde."); }
     finally { setLoading(false); }
   };

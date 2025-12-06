@@ -4,6 +4,7 @@ import { statusLabel } from "../lib/utils";
 import { api } from "../api/client";
 import { useAuthStore } from "../store/auth";
 import { useLocation } from "react-router-dom";
+import { functionsApi } from "../api/functions";
 
 const Support = () => {
   const [tickets, setTickets] = useState([]);
@@ -45,11 +46,11 @@ const Support = () => {
   const createTicket = async (e) => {
     e.preventDefault();
     if (!subject || !message) return;
-    try { const payload = { subject, message }; if (orderId) payload.order = orderId; const t = await api.post("support-tickets/", payload); setTickets([t, ...tickets]); setSubject(""); setMessage(""); setOrderId(null); } catch {}
+    try { const payload = { subject, message }; if (orderId) payload.order = orderId; const t = await api.post("support-tickets/", payload); setTickets([t, ...tickets]); setSubject(""); setMessage(""); setOrderId(null); try { await functionsApi.post("supportTicketNotifier", { ticketId: t.id, type: "new_ticket" }); } catch {} } catch {}
   };
 
   const loadMessages = async (ticket) => { setActiveTicket(ticket); try { const ms = await api.get(`support-tickets/${ticket.id}/messages/`); setMessages(ms); } catch {} };
-  const sendReply = async (e) => { e.preventDefault(); if (!activeTicket) return; try { const m = await api.post(`support-tickets/${activeTicket.id}/messages/`, { message: reply }); setMessages([...messages, m]); setReply(""); } catch {} };
+  const sendReply = async (e) => { e.preventDefault(); if (!activeTicket) return; try { const m = await api.post(`support-tickets/${activeTicket.id}/messages/`, { message: reply }); setMessages([...messages, m]); setReply(""); try { await functionsApi.post("supportTicketNotifier", { ticketId: activeTicket.id, type: "new_message" }); } catch {} } catch {} };
 
   return (
     <Layout>
