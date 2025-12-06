@@ -161,7 +161,7 @@ Cada integrante puede agregar README específicos en subcarpetas (backend-python
 
 👨‍💻 Leonel Fernandez – Base de datos (PostgreSQL y MongoDB)
 
-👨‍💻 Juan Francisco Bartlett – Microservicio IA con FastAPI y comunicación en tiempo real
+👨‍💻 Juan Francisco Bartlett – Microservicio IA y comunicación en tiempo real
 
 ---
 
